@@ -157,7 +157,9 @@ class GmailFetcher:
 
 
 if __name__ == "__main__":
-    gmail = GmailFetcher().fetch('test_newsletter.com','2026-03-30')
+    since_date = datetime.now() - timedelta(days=7)
+    fetcher = GmailFetcher()
+    gmail = GmailFetcher().fetch('test_newspaper@gmail.com',since_date.strftime("%Y-%m-%d"))
     for idx, con in enumerate(gmail):
         print(f"\nE-mail {idx}: \n {con}")
 
