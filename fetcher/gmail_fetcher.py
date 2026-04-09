@@ -148,11 +148,14 @@ class GmailFetcher:
 
     def fetch(self,sender_email: str,since_date: str):
         emails = self._extract_email(sender_email, since_date)
-        # print(emails)
-        newsletter_content = []
+        newsletter_content = {}
         for email in emails:
+            # Getting the subject (title) of newspaper
+            headers = email['payload'].get('headers', [])
+            subject = next((header['value'] for header in headers if header['name'] == 'Subject'), 'No Subject')
+            # Retrieving content
             content = self._get_email_body(email['payload'])
-            newsletter_content.append(content)
+            newsletter_content[subject] = content
         return newsletter_content
 
 
@@ -160,6 +163,7 @@ if __name__ == "__main__":
     since_date = datetime.now() - timedelta(days=7)
     fetcher = GmailFetcher()
     gmail = GmailFetcher().fetch('test_newspaper@gmail.com',since_date.strftime("%Y-%m-%d"))
-    for idx, con in enumerate(gmail):
-        print(f"\nE-mail {idx}: \n {con}")
+    for title, content in gmail.items():
+        print(title)
+        print(content)
 
