@@ -161,7 +161,6 @@ class GmailFetcher:
 
 if __name__ == "__main__":
     since_date = datetime.now() - timedelta(days=7)
-    fetcher = GmailFetcher()
     gmail = GmailFetcher().fetch('test_newspaper@gmail.com',since_date.strftime("%Y-%m-%d"))
     for title, content in gmail.items():
         print(title)
