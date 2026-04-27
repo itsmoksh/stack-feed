@@ -16,7 +16,7 @@ class GmailFetcher:
     def _get_service(self):
         SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
         creds = None
-        if os.path.exists("token.json"):
+        if os.path.exists("fetcher/token.json"):
             creds = Credentials.from_authorized_user_file("token.json", SCOPES)
             # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
