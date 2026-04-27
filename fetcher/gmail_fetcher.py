@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 class GmailFetcher:
     def __init__(self):
         self.service = self._get_service()
+        self.since_date = datetime.strftime(datetime.today() - timedelta(days=7),'%Y-%m-%d')
 
     def _get_service(self):
         SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
@@ -22,10 +23,10 @@ class GmailFetcher:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file("gmail_credentials.json", SCOPES)
+                flow = InstalledAppFlow.from_client_secrets_file("fetcher/gmail_credentials.json", SCOPES)
                 creds = flow.run_local_server(port=0)
             # Save the credentials for the next run
-            with open("token.json", "w") as token:
+            with open("fetcher/token.json", "w") as token:
                 token.write(creds.to_json())
 
         try:
@@ -121,8 +122,8 @@ class GmailFetcher:
         # Cap at 8000 chars for LLM token limits
         return clean_body[:8000]
 
-    def _extract_email(self, sender_email: str,since_date: str):
-        query = f'{sender_email} after:{since_date}'
+    def _extract_email(self, sender_email: str):
+        query = f'{sender_email} after:{self.since_date}'
         try:
             result = self.service.users().messages().list(
                 userId="me",
@@ -146,23 +147,20 @@ class GmailFetcher:
         except HttpError as error:
             print(f"An error occurred: {error}")
 
-    def fetch(self,sender_email: str,since_date: str):
-        emails = self._extract_email(sender_email, since_date)
-        newsletter_content = {}
+    def fetch(self,sender_email: str):
+        emails = self._extract_email(sender_email)
+        newsletters = []
         for email in emails:
             # Getting the subject (title) of newspaper
             headers = email['payload'].get('headers', [])
             subject = next((header['value'] for header in headers if header['name'] == 'Subject'), 'No Subject')
             # Retrieving content
             content = self._get_email_body(email['payload'])
-            newsletter_content[subject] = content
-        return newsletter_content
+            newsletters.append({'title': subject, 'source':sender_email,'content': content})
+        return newsletters
 
 
 if __name__ == "__main__":
-    since_date = datetime.now() - timedelta(days=7)
-    gmail = GmailFetcher().fetch('test_newspaper@gmail.com',since_date.strftime("%Y-%m-%d"))
-    for title, content in gmail.items():
-        print(title)
-        print(content)
+    gmail = GmailFetcher().fetch('test_newspaper@gmail.com')
+    print(gmail)
 
