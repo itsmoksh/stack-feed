@@ -91,7 +91,7 @@ class FeedFetcher:
                     if category not in scraped_feed:
                         scraped_feed[category] = []
 
-                    scraped_feed[category].append({'title':metadata.title,'source':article['link'],'content':content[:200]})
+                    scraped_feed[category].append({'title':metadata.title,'source':article['link'],'content':content})
         return scraped_feed
 
 if __name__ == '__main__':
