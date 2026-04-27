@@ -13,7 +13,6 @@ class FeedFetcher:
         self.rss_sources = config.get('rss_sources')
         self.no_rss_sources = config.get('no_rss_sources')
         self.scrapped_links= {}
-        self.scraped_feed = {}
 
     def extract_rss_urls(self):
         for source,metadata in self.rss_sources.items():
