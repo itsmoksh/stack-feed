@@ -9,7 +9,10 @@ wheels/
 
 # Virtual environments
 .venv/
+.uv-cache
 
 # Credentials
-token.json
-gmail_credentials.json
+fetcher/token.json
+fetcher/gmail_credentials.json
+latest_news.json
+.env
