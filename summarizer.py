@@ -1,4 +1,5 @@
 import json
+import time
 from fetcher.gmail_fetcher import GmailFetcher
 from fetcher.feed_fetcher import FeedFetcher
 from groq import Groq
@@ -34,7 +35,7 @@ def extract_news():
     with open('latest_news.json','w') as f:
         json.dump(latest_news,f)
 
-
+    return latest_news
 
 system_prompt = """You are StackFeed, an AI digest assistant for a Discord community 
 of AI engineering learners and enthusiasts.
@@ -57,26 +58,50 @@ Follow these rules strictly:
 - Do not make up things, stick to  the article only and always end with one bullet on practical impact for developers if possible.
 """
 
-def summarize():
+def summarize_article(content):
+    completion = client.chat.completions.create(
+        model="openai/gpt-oss-120b",
+        messages=[
+            {'role': 'system', 'content': system_prompt},
+            {"role": "user", "content": content}]
+    )
+    return completion.choices[0].message.content
+
+
+def summarize(refresh = False,news_path = 'latest_news.json'):
     try:
-        with open('latest_news.json','r') as f:
-            latest_news = json.load(f)
+        if refresh:
+            latest_news = extract_news()
+            with open(news_path,'w') as f:
+                json.dump(latest_news,f)
+        else:
+            with open(news_path,'r') as f:
+                latest_news = json.load(f)
+
     except FileNotFoundError:
-        extract_news()
-        with open('latest_news.json','r') as f:
-            latest_news = json.load(f)
+        latest_news = extract_news()
 
     print('Summarizing news...')
+    summarized_news = {}
     for category, articles in latest_news.items():
-        print(category.capitalize(),"\n")
+        summarized_news[category] = []
         for article in articles:
-            completion = client.chat.completions.create(
-                model="openai/gpt-oss-120b",
-                messages=[{'role':'system','content':system_prompt},{"role": "user", "content":article['content']}]
-            )
-            print(article['title'])
-            print(completion.choices[0].message.content)
-            print(article['source'],'\n')
+            summary = summarize_article(article['content'])
+            time.sleep(2) # To prevent the rate limit of Groq
+            summarized_article={
+                "title": article['title'],
+                "summary": summary,
+                "source": article['source']
+            }
+            summarized_news[category].append(summarized_article)
+    return summarized_news
 
 if __name__ == '__main__':
-    summarize()
+    summarized_news = summarize()
+    for category, articles in summarized_news.items():
+        print(category,'\n')
+        for article in articles:
+            print(article['title'],'\n')
+            print(article['summary'],'\n')
+            print(article['source'])
+
