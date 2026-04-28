@@ -17,7 +17,7 @@ class GmailFetcher:
         SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
         creds = None
         if os.path.exists("fetcher/token.json"):
-            creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+            creds = Credentials.from_authorized_user_file("fetcher/token.json", SCOPES)
             # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
@@ -149,6 +149,8 @@ class GmailFetcher:
 
     def fetch(self,sender_email: str):
         emails = self._extract_email(sender_email)
+        if not emails:
+            return []
         newsletters = []
         for email in emails:
             # Getting the subject (title) of newspaper
