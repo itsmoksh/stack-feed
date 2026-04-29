@@ -25,6 +25,16 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
+      - name: Restore Gmail credentials
+        shell: bash
+        run: |
+          mkdir -p fetcher
+          echo "$GMAIL_CREDENTIALS_JSON_B64" | base64 -d > fetcher/gmail_credentials.json
+          echo "$GMAIL_TOKEN_JSON_B64" | base64 -d > fetcher/token.json
+        env:
+          GMAIL_CREDENTIALS_JSON_B64: ${{ secrets.GMAIL_CREDENTIALS_JSON_B64 }}
+          GMAIL_TOKEN_JSON_B64: ${{ secrets.GMAIL_TOKEN_JSON_B64 }}
+
       - name: Run weekly bot
         env:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
