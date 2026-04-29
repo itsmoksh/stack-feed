@@ -6,8 +6,9 @@ import os
 import asyncio
 load_dotenv()
 
-TOKEN = os.getenv('DISCORD_TOKEN')
-CHANNEL_ID = int(os.getenv('CHANNEL_ID'))
+TOKEN = os.getenv("DISCORD_TOKEN")
+CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
+QNA_HOURS = int(os.getenv("QNA_HOURS", "2"))
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -35,22 +36,40 @@ def build_digest():
     if article_count == 0:
         yield "No AI news found for this week."
 
-@bot.event
-async def on_ready():
-    print(f"Logged in as {bot.user}")
+async def send_digest():
+    channel = bot.get_channel(CHANNEL_ID)
+    if channel is None:
+        channel = await bot.fetch_channel(CHANNEL_ID)
 
-@bot.command(name="send_ai_news")
-async def send_weekly_digest(ctx):
-    await ctx.channel.send("Preparing this week's AI Digest..")
+    await channel.send(f"**Preparing this week's AI Digest..**")
 
     messages = await asyncio.to_thread(lambda: list(build_digest()))
 
     for message in messages:
-        await ctx.channel.send(message)
+        await channel.send(message)
+
+@bot.event
+async def on_ready():
+    print(f"Logged in as {bot.user}")
+
+    await send_digest()
+
+    # print(f"Q&A window open for {QNA_HOURS} hours.")
+    # await asyncio.sleep(QNA_HOURS * 60 * 60)
+    #
+    # print("Q&A window closed. Shutting down.")
+    await bot.close()
+
+# Sends updates on command
+# @bot.command(name="send_ai_news")
+# async def send_weekly_digest(ctx):
+#     await ctx.channel.send("Preparing this week's AI Digest..")
+#
+#     messages = await asyncio.to_thread(lambda: list(build_digest()))
+#
+#     for message in messages:
+#         await ctx.channel.send(message)
         
 
-
-async def send_ai_news(ctx):
-    await send_weekly_digest(ctx.channel)
 
 bot.run(TOKEN)
