@@ -1,0 +1,22 @@
+{
+  "rss_sources": {
+    "OpenAI": {
+      "url": "https://openai.com/blog/rss.xml",
+      "fetch_type": ["product","research"]
+    },
+    "DeepMind": {
+      "url": "https://deepmind.google/blog/rss.xml",
+      "fetch_type": ["models","research"]
+    }
+  },
+  "no_rss_sources": {
+    "Anthropic":{
+      "url": "https://www.anthropic.com/news",
+      "class": "PublicationList-module-scss-module__KxYrHG__listItem" ,
+      "fetch_type": ["product"]
+    }
+  },
+  "gmail_sources":{
+    "The Batch": "thebatch@deeplearning.ai"
+  }
+}
