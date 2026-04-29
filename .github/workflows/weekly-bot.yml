@@ -31,4 +31,4 @@ jobs:
           CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           QNA_HOURS: "2"
-        run: uv run python weekly_bot.py
+        run: uv run python discord_bot.py
