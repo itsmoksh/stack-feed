@@ -1,5 +1,7 @@
 name: Weekly AI Digest Bot
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 on:
   schedule:
     - cron: "15 3 * * 0"
