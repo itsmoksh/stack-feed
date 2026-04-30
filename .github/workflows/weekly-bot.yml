@@ -4,7 +4,7 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 on:
   schedule:
-    - cron: "15 3 * * 0"
+    - cron: "30 16 * * 4"
   workflow_dispatch:
 
 jobs:
