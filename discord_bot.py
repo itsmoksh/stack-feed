@@ -60,16 +60,4 @@ async def on_ready():
     # print("Q&A window closed. Shutting down.")
     await bot.close()
 
-# Sends updates on command
-# @bot.command(name="send_ai_news")
-# async def send_weekly_digest(ctx):
-#     await ctx.channel.send("Preparing this week's AI Digest..")
-#
-#     messages = await asyncio.to_thread(lambda: list(build_digest()))
-#
-#     for message in messages:
-#         await ctx.channel.send(message)
-        
-
-
 bot.run(TOKEN)
