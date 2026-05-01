@@ -24,27 +24,6 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-def build_digest():
-    summarized_news = summarize(refresh=False)
-    ingest_digest(refresh=True)
-
-    article_count = 0
-
-    for category, articles in summarized_news.items():
-        yield f"** Weekly Updates about {category.title()}**"
-
-        for idx, article in enumerate(articles, start=1):
-            article_count += 1
-
-            yield (
-                f"\n**{idx}. {article['title']}**"
-                f"{article['summary'].strip()}\n"
-                f"*Source:* {article['source']}\n\n"
-            )
-
-    if article_count == 0:
-        yield "No AI news found for this week."
-
 def qna_window_is_open():
     return qna_window_end is not None and datetime.now(TIME_ZONE) < qna_window_end
 
@@ -57,12 +36,28 @@ async def get_digest_channel():
 async def send_digest():
     global qna_window_end
     channel = await get_digest_channel()
-    await channel.send(f"**Preparing this week's AI Digest..**")
 
-    messages = await asyncio.to_thread(lambda: list(build_digest()))
+    channel.send(f"Preparing this week's AI Digest..")
+    summarized_news = summarize(refresh=True)
+    ingest_digest(refresh=True)
+    article_count = 0
+    for category, articles in summarized_news.items():
 
-    for message in messages:
-        await channel.send(message)
+        # Send category header
+        await channel.send(f"**{category.title()} updates**")
+
+        for idx, article in enumerate(articles, start=1):
+            article_count += 1
+            embed = discord.Embed(
+                title=f"{idx}. {article['title']}",
+                description=article['summary'],
+                color=0x5865F2
+            )
+            embed.set_footer(text=f"Source: {article['source']}")
+
+            await channel.send(embed = embed)
+    if article_count == 0:
+        channel.send("No AI news found for this week.")
 
     qna_window_end = datetime.now(TIME_ZONE) + timedelta(hours=QNA_HOURS)
     await channel.send(
