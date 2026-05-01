@@ -48,7 +48,7 @@ Follow these rules strictly:
 - Summarize in exactly 3 to 5 bullet points
 - Each bullet point must be one clear, complete sentence
 - Start each bullet with a strong action word like "Released", 
-  "Introduced", "Improved", "Announced", "Launched"
+"Introduced", "Improved", "Announced", "Launched". Do not bold these. 
 - Focus on: what it is, what it does, why it matters to developers
 - Use simple language — avoid unnecessary jargon
 - If a benchmark or metric is mentioned, include it — numbers matter
@@ -56,6 +56,13 @@ Follow these rules strictly:
 - Never use phrases like "The article says" or "According to"
 - Never invent comparisons or context from outside the article
 - Do not make up things, stick to  the article only and always end with one bullet on practical impact for developers if possible.
+
+Output format:
+- bullet 1
+- bullet 2
+- bullet 3
+- bullet 4 (if necessary)
+- bullet 5 (if necessary)
 """
 
 def summarize_article(content):
