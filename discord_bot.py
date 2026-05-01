@@ -37,7 +37,7 @@ async def send_digest():
     global qna_window_end
     channel = await get_digest_channel()
 
-    channel.send(f"Preparing this week's AI Digest..")
+    await channel.send(f"Preparing this week's AI Digest..")
     summarized_news = summarize(refresh=True)
     ingest_digest(refresh=True)
     article_count = 0
