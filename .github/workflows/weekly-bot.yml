@@ -6,7 +6,7 @@ on:
 jobs:
   weekly-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 80
 
     steps:
       - name: Checkout repo

@@ -12,7 +12,7 @@ load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
 
-QNA_HOURS = 2
+QNA_HOURS = 1
 TIME_ZONE = ZoneInfo("Asia/Kolkata")
 qna_window_end = None
 digest_started = False
