@@ -6,6 +6,9 @@ from chonkie import SemanticChunker
 from dotenv import load_dotenv
 from uuid import uuid4
 from groq import Groq
+from sentence_transformers import SentenceTransformer
+import torch.nn.functional as F
+
 load_dotenv()
 QDRANT_URL = os.getenv("QDRANT_URL")
 QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
@@ -16,8 +19,20 @@ client = QdrantClient(
     api_key=QDRANT_API_KEY,
     cloud_inference=True
 )
-
+model = SentenceTransformer('nomic-ai/nomic-embed-text-v1.5')
 groq_client = Groq()
+
+def embed_documents(texts: list[str]):
+    matryoshka_dim = 768
+    embeddings = model.encode(texts, convert_to_tensor=True)
+    embeddings = F.layer_norm(
+        embeddings,
+        normalized_shape=(embeddings.shape[1],)
+    )
+    embeddings = embeddings[:, :matryoshka_dim]
+    embeddings = F.normalize(embeddings, p=2, dim=1)
+    return embeddings.tolist()
+
 def ingest_digest(refresh = True):
     if refresh:
         if client.collection_exists("weekly_digest"):
@@ -26,13 +41,13 @@ def ingest_digest(refresh = True):
             #Creating a same collection again
             client.create_collection(
                 collection_name="weekly_digest",
-                vectors_config=VectorParams(size=384, distance=Distance.COSINE),
+                vectors_config=VectorParams(size=768, distance=Distance.COSINE),
             )
             print("Created weekly digest collection")
         else: #if the bot is running for first time.
             client.create_collection(
                 collection_name="weekly_digest",
-                vectors_config=VectorParams(size=384, distance=Distance.COSINE),
+                vectors_config=VectorParams(size=768, distance=Distance.COSINE),
             )
     points = chunk_plus_points()
     # Ingesting points into the collection
@@ -47,7 +62,7 @@ def chunk_plus_points():
         latest_news = json.load(f)
 
     chunker = SemanticChunker(
-        embedding_model="minishlab/potion-retrieval-32M",
+        embedding_model="nomic-ai/nomic-embed-text-v1.5",
         threshold=0.8,  # Similarity threshold (0-1)
         chunk_size=2048,  # Maximum tokens per chunk
         similarity_window=3,  # Window for similarity calculation
@@ -59,11 +74,10 @@ def chunk_plus_points():
         for ar_id, article in enumerate(articles):
             chunk = chunker.chunk(article['content'])
             for chunk_id, chunk in enumerate(chunk):
+                embeddings = embed_documents([chunk.text])[0]
                 point = PointStruct(
                     id = str(uuid4()),
-                    vector=Document(
-                        text= chunk.text, model='sentence-transformers/all-MiniLM-L6-v2'
-                    ),
+                    vector=embeddings,
                     payload={
                         'chunk_id':f'{category}_article_{ar_id}_chunk_{chunk_id}',
                         'text':chunk.text,
@@ -79,18 +93,19 @@ def chunk_plus_points():
 def get_relevant_qa(query):
     results = client.query_points(
         collection_name="weekly_digest",
-        query=Document(text=query, model="sentence-transformers/all-MiniLM-L6-v2"),
+        query=embed_documents([query])[0],
         with_payload=True,
         limit=2
     )
     context = ''.join([r.payload['text'] for r in results.points])
-    prompt = f'''Given the question and context below, generate the answer based on context only,
-        and answer as you are telling to the user.
-        If you don't find the answer inside the context, say I don't know.
-        Do not make up things.
-
-        Question: {query}
-        Context: {context}'''
+    prompt = f'''
+    You are an expert in understanding the context of the articles about the advancements in AI or updates, and
+    provided with the user question and the context.
+    Based on the context only you have to generate the answer.
+    If you don't find the answer inside the context, return their is no context provided in the above news.
+    Do not make up things.
+    Question: {query}
+    Context: {context}'''
 
     completion = groq_client.chat.completions.create(
         model='llama-3.3-70b-versatile',
@@ -100,6 +115,5 @@ def get_relevant_qa(query):
 
 
 if __name__ == "__main__":
-    # ingest_digest()
+    ingest_digest()
     print(get_relevant_qa("Is there any cost associated with GPT 5.5 model"))
-
