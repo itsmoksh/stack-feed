@@ -39,7 +39,7 @@ async def send_digest():
 
     await channel.send(f"Preparing this week's AI Digest..")
     summarized_news = summarize(refresh=True)
-    ingest_digest(refresh=True)
+    await asyncio.to_thread(ingest_digest, refresh=True)
     article_count = 0
     for category, articles in summarized_news.items():
 
