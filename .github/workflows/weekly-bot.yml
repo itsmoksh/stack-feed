@@ -42,3 +42,11 @@ jobs:
           QDRANT_URL: ${{ secrets.QDRANT_URL }}        # ← add this
           QDRANT_API_KEY: ${{ secrets.QDRANT_API_KEY }}
         run: uv run python discord_bot.py
+
+      - name: Upload logs
+        if: always()  # runs even if bot fails
+        uses: actions/upload-artifact@v4
+        with:
+          name: bot-logs-${{ github.run_number }}
+          path: stack_feed.log      # ← matches your log file name
+          retention-days: 30
