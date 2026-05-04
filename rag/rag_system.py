@@ -7,8 +7,14 @@ from dotenv import load_dotenv
 from uuid import uuid4
 from groq import Groq
 from fastembed import TextEmbedding
-
+from pathlib import Path
+from logging_setup import setup_logger
 load_dotenv()
+
+#Setting up the rag logger
+log_path = Path(__file__).parent.parent/'stack_feed.log'
+rag_logger = setup_logger('rag_log',log_path)
+
 embed_model = TextEmbedding('nomic-ai/nomic-embed-text-v1.5')
 QDRANT_URL = os.getenv("QDRANT_URL")
 QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
@@ -25,14 +31,14 @@ def ingest_digest(refresh = True):
     if refresh:
         if client.collection_exists("weekly_digest"):
             client.delete_collection(collection_name="weekly_digest")
-            print("Deleted previous weekly digest collection")
+            rag_logger.info("Deleted the 'weekly_digest' collection ")
 
             #Creating a same collection again
             client.create_collection(
                 collection_name="weekly_digest",
                 vectors_config=VectorParams(size=768, distance=Distance.COSINE),
             )
-            print("Created weekly digest collection")
+            rag_logger.info("Recreated the 'weekly_digest' collection")
 
         else: #if the bot is running for first time.
             client.create_collection(
@@ -40,8 +46,7 @@ def ingest_digest(refresh = True):
                 vectors_config=VectorParams(size=768, distance=Distance.COSINE),
             )
     docs,metadata = chunker()
-    # Ingesting points into the collection
-    print("Ingesting points to collection")
+    rag_logger.info("Chunks created, storing them into the Qdrant database")
     client.upsert(
         collection_name="weekly_digest",
         points=models.Batch(
@@ -50,10 +55,12 @@ def ingest_digest(refresh = True):
             payloads=metadata,
         ),
     )
+    rag_logger.info("Chunks upserted, and ready for QnA..")
 
 def chunker():
     with open('../latest_news.json', 'r') as f:
         latest_news = json.load(f)
+    rag_logger.info("Loaded latest news from the json file, and creating a chunker")
 
     chunker = SemanticChunker(
         embedding_model="nomic-ai/nomic-embed-text-v1.5",
@@ -62,6 +69,7 @@ def chunker():
         similarity_window=3,  # Window for similarity calculation
         min_sentences_per_chunk=4
     )
+    rag_logger.info("Chunker created, chunking the latest news and embedding it using 'nomic-ai/nomic-embed-text-v1.5'")
     docs = []
     metadata = []
     for category,articles in latest_news.items():
@@ -79,6 +87,7 @@ def chunker():
     return docs, metadata
 
 def get_relevant_qa(query):
+    rag_logger.info(f"User Query: {query}, finding the relevant answers")
     query_embed = next(embed_model.embed([query]))
     results = client.query_points(
         collection_name="weekly_digest",
@@ -86,6 +95,7 @@ def get_relevant_qa(query):
         with_payload=True,
         limit=2
     )
+    rag_logger.info(f"Relevant chunks:{','.join([r.payload['chunk_id']for r in results.points])}")
     context = ''.join([r.payload['text'] for r in results.points])
     prompt = f'''
     You are an expert in understanding the context of the articles about the advancements in AI or updates, and
