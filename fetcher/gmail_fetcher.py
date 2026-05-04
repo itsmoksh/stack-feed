@@ -7,6 +7,12 @@ from googleapiclient.errors import HttpError
 import base64
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
+from pathlib import Path
+from logging_setup import setup_logger
+
+# Setting up the logger
+log_path = Path(__file__).parent.parent/'stack_feed.log'
+gmail_logger = setup_logger('gmail_logger',log_path)
 
 class GmailFetcher:
     def __init__(self):
@@ -32,11 +38,11 @@ class GmailFetcher:
         try:
             # Call the Gmail API
             service = build("gmail", "v1", credentials=creds)
-            print("Successfully connected to gmail")
+            gmail_logger.info("Successfully connected to Gmail API")
             return service
         except HttpError as error:
             # TODO(developer) - Handle errors from gmail API.
-            print(f"An error occurred: {error}")
+            gmail_logger.error(f"An error occurred in connecting Gmail API: {error}")
             return None
 
     def _decode_part(self,data: str, mime_type: str) -> str:
@@ -55,7 +61,7 @@ class GmailFetcher:
                 # Plain text — return as is
                 return decoded
         except Exception as e:
-            print(f"Decode error: {e}")
+            gmail_logger.error(f"Unable to decode, got error: {e}")
             return ""
 
     def _get_email_body(self, payload: dict) -> str:
@@ -109,6 +115,7 @@ class GmailFetcher:
         raw_body = html_body or plain_body
 
         if not raw_body:
+            gmail_logger.debug(f"No body found.")
             return "No content found in email."
 
         # Clean up excessive blank lines
@@ -132,7 +139,7 @@ class GmailFetcher:
             ).execute()
 
             messages = result.get("messages", [])
-            print(f"Found {len(messages)} emails\n")
+            gmail_logger.info(f"Found {len(messages)} messages from {sender_email}")
 
             emails = []
             for msg in messages:
@@ -145,11 +152,13 @@ class GmailFetcher:
             return emails
 
         except HttpError as error:
-            print(f"An error occurred: {error}")
+            gmail_logger.error(f"Error occurred while extracting email: {error} from {sender_email}")
 
     def fetch(self,sender_email: str):
+        gmail_logger.info(f"Fetching newsletters from  {sender_email}")
         emails = self._extract_email(sender_email)
         if not emails:
+            gmail_logger.info(f"No emails found for {sender_email}")
             return []
         newsletters = []
         for email in emails:
@@ -159,6 +168,7 @@ class GmailFetcher:
             # Retrieving content
             content = self._get_email_body(email['payload'])
             newsletters.append({'title': subject, 'source':sender_email,'content': content})
+            gmail_logger.info(f"Found Newsletter: {subject} from {sender_email}")
         return newsletters
 
 
