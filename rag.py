@@ -1,15 +1,15 @@
 import json
-from qdrant_client import QdrantClient
+from qdrant_client import QdrantClient, models
 from qdrant_client.models import Distance, VectorParams, PointStruct, Document
 import os
 from chonkie import SemanticChunker
 from dotenv import load_dotenv
 from uuid import uuid4
 from groq import Groq
-from sentence_transformers import SentenceTransformer
-import torch.nn.functional as F
+from fastembed import TextEmbedding
 
 load_dotenv()
+embed_model = TextEmbedding('nomic-ai/nomic-embed-text-v1.5')
 QDRANT_URL = os.getenv("QDRANT_URL")
 QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
 
@@ -19,45 +19,39 @@ client = QdrantClient(
     api_key=QDRANT_API_KEY,
     cloud_inference=True
 )
-model = SentenceTransformer('nomic-ai/nomic-embed-text-v1.5')
 groq_client = Groq()
-
-def embed_documents(texts: list[str]):
-    matryoshka_dim = 768
-    embeddings = model.encode(texts, convert_to_tensor=True)
-    embeddings = F.layer_norm(
-        embeddings,
-        normalized_shape=(embeddings.shape[1],)
-    )
-    embeddings = embeddings[:, :matryoshka_dim]
-    embeddings = F.normalize(embeddings, p=2, dim=1)
-    return embeddings.tolist()
 
 def ingest_digest(refresh = True):
     if refresh:
         if client.collection_exists("weekly_digest"):
             client.delete_collection(collection_name="weekly_digest")
             print("Deleted previous weekly digest collection")
+
             #Creating a same collection again
             client.create_collection(
                 collection_name="weekly_digest",
                 vectors_config=VectorParams(size=768, distance=Distance.COSINE),
             )
             print("Created weekly digest collection")
+
         else: #if the bot is running for first time.
             client.create_collection(
                 collection_name="weekly_digest",
                 vectors_config=VectorParams(size=768, distance=Distance.COSINE),
             )
-    points = chunk_plus_points()
+    docs,metadata = chunker()
     # Ingesting points into the collection
     print("Ingesting points to collection")
     client.upsert(
         collection_name="weekly_digest",
-        points=points,
+        points=models.Batch(
+            ids=[str(uuid4()) for i in range(len(docs))],
+            vectors=[next(embeddings).tolist() for embeddings in docs],
+            payloads=metadata,
+        ),
     )
 
-def chunk_plus_points():
+def chunker():
     with open('latest_news.json','r') as f:
         latest_news = json.load(f)
 
@@ -66,34 +60,29 @@ def chunk_plus_points():
         threshold=0.8,  # Similarity threshold (0-1)
         chunk_size=2048,  # Maximum tokens per chunk
         similarity_window=3,  # Window for similarity calculation
-        min_sentences_per_chunk=6
+        min_sentences_per_chunk=4
     )
-    print("Chunking Articles")
-    points = []
+    docs = []
+    metadata = []
     for category,articles in latest_news.items():
         for ar_id, article in enumerate(articles):
             chunk = chunker.chunk(article['content'])
             for chunk_id, chunk in enumerate(chunk):
-                embeddings = embed_documents([chunk.text])[0]
-                point = PointStruct(
-                    id = str(uuid4()),
-                    vector=embeddings,
-                    payload={
-                        'chunk_id':f'{category}_article_{ar_id}_chunk_{chunk_id}',
-                        'text':chunk.text,
-                        'title': article['title'],
-                        'category': category,
-                        'source': article['source'],
-                    }
-                )
-                points.append(point)
-
-    return points
+                docs.append(embed_model.embed([chunk.text]))
+                metadata.append({
+                    'chunk_id': f'{category}_article_{ar_id}_chunk_{chunk_id}',
+                    'text': chunk.text,
+                    'title': article['title'],
+                    'category': category,
+                    'source': article['source'],
+                })
+    return docs, metadata
 
 def get_relevant_qa(query):
+    query_embed = next(embed_model.embed([query]))
     results = client.query_points(
         collection_name="weekly_digest",
-        query=embed_documents([query])[0],
+        query=query_embed.tolist(),
         with_payload=True,
         limit=2
     )
@@ -109,7 +98,8 @@ def get_relevant_qa(query):
 
     completion = groq_client.chat.completions.create(
         model='llama-3.3-70b-versatile',
-        messages=[{"role": "user", "content": prompt}])
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0)
 
     return completion.choices[0].message.content
 

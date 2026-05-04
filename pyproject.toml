@@ -8,6 +8,7 @@ dependencies = [
     "bs4>=0.0.2",
     "chonkie[model2vec]>=1.6.4",
     "discord>=2.3.2",
+    "fastembed>=0.8.0",
     "feedparser>=6.0.12",
     "google-api-python-client>=2.193.0",
     "google-auth-httplib2>=0.3.1",
