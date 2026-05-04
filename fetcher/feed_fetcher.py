@@ -121,8 +121,8 @@ if __name__ == '__main__':
         config = json.load(f)
 
     feed = FeedFetcher(config)
-    # feed.extract_rss_urls()
+    feed.extract_rss_urls()
     feed.extract_no_rss_urls()
-    # feed.extract_category()
-    # feed.get_scrapped_links()
-    # print(feed.extract_feed())
+    feed.extract_category()
+    feed.get_scrapped_links()
+    print(feed.extract_feed())
