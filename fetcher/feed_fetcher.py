@@ -3,9 +3,15 @@ from datetime import datetime, timezone, timedelta
 import requests
 from bs4 import BeautifulSoup
 import trafilatura
-from typing import Dict, List
+from typing import Dict
 import json
 import re
+from pathlib import Path
+from logging_setup import setup_logger
+
+#settitng up the loger
+log_path = Path(__file__).parent.parent/'stack_feed.log'
+feed_loger = setup_logger("feed_loger",log_path)
 
 class FeedFetcher:
     def __init__(self,config:Dict):
@@ -22,16 +28,19 @@ class FeedFetcher:
                 try:
                     published_date = datetime(*entry['published_parsed'][:6])
                 except:
+                    feed_loger.debug(f"No published date found for {entry['link']}, setting to current:{datetime.now(timezone.utc)}")
                     published_date = datetime.now(timezone.utc)
 
                 if published_date > self.since_date:
-                    if 'tags' in entry.keys():
+                    if 'tags' in entry and entry['tags']:
                         category = entry['tags'][0].term.lower()
                     else:
                         category = 'NA'
                     rss_urls.append({'link':entry['link'],'category':category})
+                    feed_loger.info(f"RSS URL found, URL: {entry['link']}, Category: {category}, Published Date: {published_date}")
 
-            self.scrapped_links[source] = rss_urls
+            if rss_urls:
+                self.scrapped_links[source] = rss_urls
 
 
     def extract_no_rss_urls(self):
@@ -55,13 +64,14 @@ class FeedFetcher:
                 try:
                     published_date = datetime.strptime(date_str, "%b %d, %Y")
                 except:
-                    print("Unable to find the published date")
+                    feed_loger.debug(f"No published date found for {link}")
 
                 if category in metadata['fetch_type']:
                     if published_date is not None and published_date > self.since_date:
                         no_rss_urls.append({'link':link,'category':category.lower()})
+                        feed_loger.info(f"Non RSS URL found; URL: {link}, Category: {category}, Published Date: {published_date}")
 
-            if no_rss_urls != []:
+            if no_rss_urls:
                 self.scrapped_links[source] = no_rss_urls
 
 
@@ -72,25 +82,39 @@ class FeedFetcher:
         for source, articles in self.scrapped_links.items():
             for article in articles:
                 if article['category'] == 'NA':
-                    downloaded = trafilatura.fetch_url(article['link'])
-                    article_metadata = trafilatura.extract_metadata(downloaded)
-                    if article_metadata.categories != []:
-                        article['category'] = article_metadata.categories[0]
+                    try:
+                        downloaded = trafilatura.fetch_url(article['link'])
+                        article_metadata = trafilatura.extract_metadata(downloaded)
+                        if article_metadata.categories != []:
+                            article['category'] = article_metadata.categories[0]
+                            feed_loger.info(f"Category found for {article['link']}, Category: {article_metadata.categories[0]}")
+                        else:
+                            feed_loger.debug(f"No category found for {article['link']}")
+
+                    except Exception as e:
+                        feed_loger.ERROR(f"Failed to extract category for {article['link']}, got error: {e}")
 
     def extract_feed(self):
         scraped_feed ={}
+
         for source, articles in self.scrapped_links.items():
             for article in articles:
                 category = article['category'].lower()
                 if category in ['product','model','research']:
-                    loader = trafilatura.fetch_url(article['link'])
-                    content = trafilatura.extract(loader)
-                    metadata = trafilatura.extract_metadata(loader)
+                    try:
+                        loader = trafilatura.fetch_url(article['link'])
+                        content = trafilatura.extract(loader)
+                        metadata = trafilatura.extract_metadata(loader)
 
-                    if category not in scraped_feed:
-                        scraped_feed[category] = []
+                        if category not in scraped_feed:
+                            scraped_feed[category] = []
 
-                    scraped_feed[category].append({'title':metadata.title,'source':article['link'],'content':content})
+                        feed_loger.info(f"Extracted content from {metadata.title}, source: {article['link']}, category: {category}")
+                        scraped_feed[category].append({'title': metadata.title, 'source': article['link'], 'content': content})
+
+                    except Exception as e:
+                        feed_loger.ERROR(f"Unable to extract data from {article['link']}, got error: {e}")
+
         return scraped_feed
 
 if __name__ == '__main__':

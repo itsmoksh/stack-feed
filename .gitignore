@@ -16,3 +16,4 @@ fetcher/token.json
 fetcher/gmail_credentials.json
 latest_news.json
 .env
+stack_feed.log
