@@ -1,6 +1,6 @@
 import json
 from qdrant_client import QdrantClient, models
-from qdrant_client.models import Distance, VectorParams, PointStruct, Document
+from qdrant_client.models import Distance, VectorParams
 import os
 from chonkie import SemanticChunker
 from dotenv import load_dotenv
