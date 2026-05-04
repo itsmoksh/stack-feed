@@ -58,7 +58,7 @@ def ingest_digest(refresh = True):
     rag_logger.info("Chunks upserted, and ready for QnA..")
 
 def chunker():
-    with open('../latest_news.json', 'r') as f:
+    with open(news_path, 'r') as f:
         latest_news = json.load(f)
     rag_logger.info("Loaded latest news from the json file, and creating a chunker")
 
