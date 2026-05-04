@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands, tasks
 from summarizer import summarize
-from rag import ingest_digest, get_relevant_qa
+from rag.rag_system import ingest_digest, get_relevant_qa
 from dotenv import load_dotenv
 from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta

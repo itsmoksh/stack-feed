@@ -52,7 +52,7 @@ def ingest_digest(refresh = True):
     )
 
 def chunker():
-    with open('latest_news.json','r') as f:
+    with open('../latest_news.json', 'r') as f:
         latest_news = json.load(f)
 
     chunker = SemanticChunker(
