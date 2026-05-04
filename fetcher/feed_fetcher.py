@@ -11,7 +11,7 @@ from logging_setup import setup_logger
 
 #settitng up the loger
 log_path = Path(__file__).parent.parent/'stack_feed.log'
-feed_loger = setup_logger("feed_loger",log_path)
+feed_logger = setup_logger("feed_logger",log_path)
 
 class FeedFetcher:
     def __init__(self,config:Dict):
@@ -28,7 +28,7 @@ class FeedFetcher:
                 try:
                     published_date = datetime(*entry['published_parsed'][:6])
                 except:
-                    feed_loger.debug(f"No published date found for {entry['link']}, setting to current:{datetime.now(timezone.utc)}")
+                    feed_logger.debug(f"No published date found for {entry['link']}, setting to current:{datetime.now(timezone.utc)}")
                     published_date = datetime.now(timezone.utc)
 
                 if published_date > self.since_date:
@@ -37,7 +37,7 @@ class FeedFetcher:
                     else:
                         category = 'NA'
                     rss_urls.append({'link':entry['link'],'category':category})
-                    feed_loger.info(f"RSS URL found, URL: {entry['link']}, Category: {category}, Published Date: {published_date}")
+                    feed_logger.info(f"RSS URL found, URL: {entry['link']}, Category: {category}, Published Date: {published_date}")
 
             if rss_urls:
                 self.scrapped_links[source] = rss_urls
@@ -64,12 +64,12 @@ class FeedFetcher:
                 try:
                     published_date = datetime.strptime(date_str, "%b %d, %Y")
                 except:
-                    feed_loger.debug(f"No published date found for {link}")
+                    feed_logger.debug(f"No published date found for {link}")
 
                 if category in metadata['fetch_type']:
                     if published_date is not None and published_date > self.since_date:
                         no_rss_urls.append({'link':link,'category':category.lower()})
-                        feed_loger.info(f"Non RSS URL found; URL: {link}, Category: {category}, Published Date: {published_date}")
+                        feed_logger.info(f"Non RSS URL found; URL: {link}, Category: {category}, Published Date: {published_date}")
 
             if no_rss_urls:
                 self.scrapped_links[source] = no_rss_urls
@@ -87,12 +87,12 @@ class FeedFetcher:
                         article_metadata = trafilatura.extract_metadata(downloaded)
                         if article_metadata.categories != []:
                             article['category'] = article_metadata.categories[0]
-                            feed_loger.info(f"Category found for {article['link']}, Category: {article_metadata.categories[0]}")
+                            feed_logger.info(f"Category found for {article['link']}, Category: {article_metadata.categories[0]}")
                         else:
-                            feed_loger.debug(f"No category found for {article['link']}")
+                            feed_logger.debug(f"No category found for {article['link']}")
 
                     except Exception as e:
-                        feed_loger.ERROR(f"Failed to extract category for {article['link']}, got error: {e}")
+                        feed_logger.error(f"Failed to extract category for {article['link']}, got error: {e}")
 
     def extract_feed(self):
         scraped_feed ={}
@@ -109,11 +109,11 @@ class FeedFetcher:
                         if category not in scraped_feed:
                             scraped_feed[category] = []
 
-                        feed_loger.info(f"Extracted content from {metadata.title}, source: {article['link']}, category: {category}")
+                        feed_logger.info(f"Extracted content from {metadata.title}, source: {article['link']}, category: {category}")
                         scraped_feed[category].append({'title': metadata.title, 'source': article['link'], 'content': content})
 
                     except Exception as e:
-                        feed_loger.ERROR(f"Unable to extract data from {article['link']}, got error: {e}")
+                        feed_logger.error(f"Unable to extract data from {article['link']}, got error: {e}")
 
         return scraped_feed
 
