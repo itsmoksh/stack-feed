@@ -56,19 +56,18 @@ class FeedFetcher:
 
                 _,add = link.split('/news')
                 url = f'{metadata["url"]}{add}'
-
-                pattern = r"(\w+\s+\d{1,2},\s+\d{4})([A-Z][a-z]+)"
-                match = re.search(pattern,text)
-                date_str,category = match.groups()
-                published_date = None
+                published_date,category = None,None
                 try:
+                    pattern = r"(\w+\s+\d{1,2},\s+\d{4})([A-Z][a-z]+)"
+                    match = re.search(pattern,text)
+                    date_str,category = match.groups()
                     published_date = datetime.strptime(date_str, "%b %d, %Y")
                 except:
-                    feed_logger.debug(f"No published date found for {link}")
+                    feed_logger.debug(f"Either did not find the published date or a category for {url}")
 
-                if category in metadata['fetch_type']:
+                if category is not None and category in metadata['fetch_type']:
                     if published_date is not None and published_date > self.since_date:
-                        no_rss_urls.append({'link':link,'category':category.lower()})
+                        no_rss_urls.append({'link':url,'category':category.lower()})
                         feed_logger.info(f"Non RSS URL found; URL: {link}, Category: {category}, Published Date: {published_date}")
 
             if no_rss_urls:
@@ -122,8 +121,8 @@ if __name__ == '__main__':
         config = json.load(f)
 
     feed = FeedFetcher(config)
-    feed.extract_rss_urls()
+    # feed.extract_rss_urls()
     feed.extract_no_rss_urls()
-    feed.extract_category()
-    feed.get_scrapped_links()
-    print(feed.extract_feed())
+    # feed.extract_category()
+    # feed.get_scrapped_links()
+    # print(feed.extract_feed())
