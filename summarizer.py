@@ -4,14 +4,19 @@ from fetcher.gmail_fetcher import GmailFetcher
 from fetcher.feed_fetcher import FeedFetcher
 from groq import Groq
 from dotenv import load_dotenv
+from logging_setup import setup_logger
 load_dotenv()
+
+#Setting up the summarizer logger
+log_path = 'stack_feed.log'
+summarize_logger = setup_logger('summarize_logger',log_path)
 
 client = Groq()
 def extract_news():
     with open('fetcher/config.json','r') as f:
         configs = json.load(f)
 
-
+    summarize_logger.info("Extracting latest weekly news from the sources")
     gmail_configs = configs.pop('gmail_sources')
     feed_configs = configs
     latest_news = {}
@@ -34,7 +39,7 @@ def extract_news():
     #Creating a Json
     with open('latest_news.json','w') as f:
         json.dump(latest_news,f)
-
+        summarize_logger.info("All the weekly news are stored in 'latest_news.json'")
     return latest_news
 
 system_prompt = """You are StackFeed, an AI digest assistant for a Discord community 
@@ -86,9 +91,11 @@ def summarize(refresh = False,news_path = 'latest_news.json'):
                 latest_news = json.load(f)
 
     except FileNotFoundError:
+        summarize_logger.info("No json files found for latest news, creating new ones")
         latest_news = extract_news()
 
-    print('Summarizing news...')
+    summarize_logger.info("Latest weekly news are loaded for summarization")
+
     summarized_news = {}
     for category, articles in latest_news.items():
         summarized_news[category] = []
@@ -101,10 +108,11 @@ def summarize(refresh = False,news_path = 'latest_news.json'):
                 "source": article['source']
             }
             summarized_news[category].append(summarized_article)
+    summarize_logger.info("Weekly news are summarized..")
     return summarized_news
 
 if __name__ == '__main__':
-    summarized_news = summarize()
+    summarized_news = summarize(refresh=True)
     for category, articles in summarized_news.items():
         print(category,'\n')
         for article in articles:
