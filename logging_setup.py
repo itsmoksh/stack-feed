@@ -1,6 +1,4 @@
 import logging
-from pathlib import Path
-
 
 def setup_logger(name, log_file='stack_feed.log', level=logging.DEBUG):
     # Create a custom logger
