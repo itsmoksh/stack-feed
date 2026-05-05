@@ -100,7 +100,7 @@ def chunker():
 
 def search(query: str):
     search_result = client.query_points(
-        collection_name='weekly_digest_hyb',
+        collection_name='weekly_digest',
         query=models.FusionQuery(
             fusion=models.Fusion.RRF  ),
         prefetch=[
