@@ -15,6 +15,7 @@ load_dotenv()
 log_path = Path(__file__).parent.parent/'stack_feed.log'
 rag_logger = setup_logger('rag_log',log_path)
 
+news_path = Path(__file__).parent.parent/'latest_news.json'
 embed_model = TextEmbedding('nomic-ai/nomic-embed-text-v1.5')
 QDRANT_URL = os.getenv("QDRANT_URL")
 QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
