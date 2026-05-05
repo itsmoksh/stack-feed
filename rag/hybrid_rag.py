@@ -116,12 +116,19 @@ def search(query: str):
         query_filter=None,
         limit=4
     ).points
-    rag_logger.info(f"Relevant chunks:{','.join([r.payload['chunk_id']for r in search_result])}")
+
+    #Metadata extraction
+    chunk_sources = set([r.payload['source'] for r in search_result])
     context = ''.join([r.payload['text'] for r in search_result])
+    search_logs= {
+        'Query':query,
+        'chunk_ids':",".join([r.payload['chunk_id'] for r in search_result])
+    }
+
     prompt = f'''
     You are an expert in understanding the context of the articles about the advancements in AI or updates, and
     provided with the user question and the context.
-    Based on the context only you have to generate the answer, and try to give the structured answers.
+    Based on the context only you have to generate the structured response for the user.
     If you don't find the answer inside the context, return their is no context provided in the above news.
     Do not make up things.
     Question: {query}
@@ -132,15 +139,12 @@ def search(query: str):
         messages=[{"role": "user", "content": prompt}],
         temperature=0)
 
-    relevant_chunks = " ".join([r.payload['text'] for r in search_result])
-    search_logs= {
-        'Query':query,
-        'relevant_chunks':",".join([r.payload['chunk_id'] for r in search_result])
-    }
     rag_logger.info(search_logs)
-    return completion.choices[0].message.content, relevant_chunks
+    sources = ",".join([source for source in chunk_sources])
+    return completion.choices[0].message.content, sources, context
 
 if __name__ == '__main__':
-    # ingest_digest()
-    answer,_ = search("Is there any cost associated with gpt 5.5 model?")
+    ingest_digest()
+    answer,sources,_= search("Is there any cost associated with gpt 5.5 model?")
     print(answer)
+    print(sources)
