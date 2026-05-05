@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands, tasks
 from summarizer import summarize
-from rag.rag_system import ingest_digest, get_relevant_qa
+from rag.hybrid_rag import ingest_digest, search
 from dotenv import load_dotenv
 from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta
@@ -65,7 +65,7 @@ async def send_digest():
     )
 
 async def answer_in_thread(thread, question):
-    answer = await asyncio.to_thread(get_relevant_qa, question)
+    answer = await asyncio.to_thread(search, question)
     await thread.send(answer)
 
 async def close_all_qna_threads():
