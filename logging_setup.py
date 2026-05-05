@@ -11,7 +11,4 @@ def setup_logger(name, log_file='stack_feed.log', level=logging.DEBUG):
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
     return logger
