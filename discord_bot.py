@@ -65,7 +65,7 @@ async def send_digest():
     )
 
 async def answer_in_thread(thread, question):
-    answer = await asyncio.to_thread(search, question)
+    answer,_ = await asyncio.to_thread(search, question)
     await thread.send(answer)
 
 async def close_all_qna_threads():

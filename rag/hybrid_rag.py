@@ -132,9 +132,15 @@ def search(query: str):
         messages=[{"role": "user", "content": prompt}],
         temperature=0)
 
-    return completion.choices[0].message.content
+    relevant_chunks = " ".join([r.payload['text'] for r in search_result])
+    search_logs= {
+        'Query':query,
+        'relevant_chunks':",".join([r.payload['chunk_id'] for r in search_result])
+    }
+    rag_logger.info(search_logs)
+    return completion.choices[0].message.content, relevant_chunks
 
 if __name__ == '__main__':
-    ingest_digest()
-    answer = search("Is there any cost associated with gpt 5.5 model?")
+    # ingest_digest()
+    answer,_ = search("Is there any cost associated with gpt 5.5 model?")
     print(answer)
