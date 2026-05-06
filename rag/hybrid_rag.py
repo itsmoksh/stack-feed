@@ -98,7 +98,7 @@ def chunker():
                 })
     return docs, metadata
 
-def search(query: str):
+def retrieve_chunks(query: str):
     search_result = client.query_points(
         collection_name='weekly_digest',
         query=models.FusionQuery(
@@ -117,14 +117,19 @@ def search(query: str):
         limit=4
     ).points
 
-    #Metadata extraction
+    chunk_ids = ",".join([r.payload['chunk_id'] for r in search_result])
     chunk_sources = set([r.payload['source'] for r in search_result])
+    sources = ", ".join([source for source in chunk_sources])
     context = ''.join([r.payload['text'] for r in search_result])
     search_logs= {
         'Query':query,
-        'chunk_ids':",".join([r.payload['chunk_id'] for r in search_result])
+        'chunk_ids':chunk_ids,
+        'source':sources
     }
+    rag_logger.info(search_logs)
+    return chunk_ids, sources, context
 
+def generate_response(query,context):
     prompt = f'''
     You are an expert in understanding the context of the articles about the advancements in AI or updates, and
     provided with the user question and the context.
@@ -139,12 +144,12 @@ def search(query: str):
         messages=[{"role": "user", "content": prompt}],
         temperature=0)
 
-    rag_logger.info(search_logs)
-    sources = ",".join([source for source in chunk_sources])
-    return completion.choices[0].message.content, sources, context
+    return completion
 
 if __name__ == '__main__':
     ingest_digest()
-    answer,sources,_= search("Is there any cost associated with gpt 5.5 model?")
-    print(answer)
+    query = 'Is there any cost associated with gpt 5.5 model?'
+    _,sources,context = retrieve_chunks(query)
+    answer= generate_response(query,context)
+    print(answer.choices[0].message.content)
     print(sources)

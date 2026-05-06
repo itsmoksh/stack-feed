@@ -37,9 +37,10 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
-          CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
+          DIGEST_CHANNEL_ID: ${{ secrets.DIGEST_CHANNEL_ID }}
+          METRICS_CHANNEL_ID: ${{ secrets.METRICS_CHANNEL_ID }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          QDRANT_URL: ${{ secrets.QDRANT_URL }}        # ← add this
+          QDRANT_URL: ${{ secrets.QDRANT_URL }}
           QDRANT_API_KEY: ${{ secrets.QDRANT_API_KEY }}
         run: uv run python discord_bot.py
 
@@ -48,5 +49,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: bot-logs-${{ github.run_number }}
-          path: stack_feed.log      # ← matches your log file name
+          path: stack_feed.log
           retention-days: 30
