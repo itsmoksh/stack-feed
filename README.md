@@ -126,6 +126,7 @@ stack-feed/
 
 ```
 **Moksh Jain**
-Credits: OpenAI, Anthropic, DeepMind, The Batch Newsletter
+
+**Credits:** OpenAI, Anthropic, DeepMind, The Batch Newsletter
 
 [LinkedIn](https://www.linkedin.com/in/itsmoksh/) | [GitHub](https://github.com/itsmoksh) | [Portfolio](https://codebasics.io/portfolio/Moksh-Jain)
