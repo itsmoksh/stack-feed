@@ -108,13 +108,23 @@ stack-feed/
 |-- discord_bot.py                    # Discord digest and Q&A bot
 |-- summarizer.py                     # News extraction and article summarization
 |-- logging_setup.py                  # Shared file logger setup
+|-- README.md                         # README file  
+|-- assets/
+|   |-- fetcher_workflow.png          # Workflow diagram of Fetcher
+|   |-- overall_workflow.png          # Overall workflow diagram
+|   |-- rag_workflow.png              # Workflow diagram of RAG
 |-- fetcher/
 |   |-- config.json                   # Source configuration
 |   |-- feed_fetcher.py               # RSS and non-RSS article extraction
-|   `-- gmail_fetcher.py              # Gmail newsletter extraction
-`-- rag/
-    |-- hybrid_rag.py                 # Dense + sparse Qdrant retrieval
-    |-- rag_eval.py                   # RAG evaluation metrics
-    `-- rag_system.py                 # Earlier dense-only RAG implementation
-```
+|   |-- gmail_fetcher.py              # Gmail newsletter extraction
+|   |-- README.md                     # Fetcher README
+|-- rag/
+|   |-- hybrid_rag.py                 # Dense + sparse Qdrant retrieval
+|   |-- rag_eval.py                   # RAG evaluation metrics
+|   |-- rag_system.py                 # Earlier dense-only RAG implementation
+|   |-- README.md                     # RAG README
 
+```
+**Moksh Jain**
+Credits: OpenAI, Anthropic, DeepMind, The Batch Newsletter
+[LinkedIn](https://www.linkedin.com/in/itsmoksh/) | [GitHub](https://github.com/itsmoksh) | [Portfolio](https://codebasics.io/portfolio/Moksh-Jain)
