@@ -34,7 +34,8 @@ def extract_news():
     for _,email in gmail_configs.items():
         e_mail_news = GmailFetcher().fetch(email)
         gmail_news.extend(e_mail_news)
-    latest_news.update({'newsletter':gmail_news})
+    if gmail_news:
+        latest_news.update({'newsletter':gmail_news})
 
     #Creating a Json
     with open('latest_news.json','w') as f:
