@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 from groq import Groq
 from rag.hybrid_rag import retrieve_chunks,generate_response
 import time
-import re
+from collections import Counter
 import threading
 from logging_setup import setup_logger
 from pathlib import Path
@@ -10,17 +10,15 @@ load_dotenv()
 
 log_path = Path(__file__).parent.parent/'stack_feed.log'
 groq_client = Groq()
-eval_loger = setup_logger('eval_loger',log_path)
+eval_logger = setup_logger('eval_logger',log_path)
 
 class EvalRag:
-    LOW_SCORE_THRESHOLD = 0.85
-    metrics = {'total_latency':[],'context_relevance_score':[],'ground_ness_score':[],'answer_relevance_score':[],'fallback_score':0,'fallback_queries':[],'low_score_queries':[]}
+    metrics = {'total_latency':[],'context_relevance':[],'ground_ness':[],'answer_relevance':[],'low_cr_queries':[],'low_gr_queries':[],'low_ar_queries':[]}
     metrics_lock = threading.Lock()
 
     def __init__(self,query):
         self.query = query
         self.response, self.context,self.sources = self.evaluate_latency_and_generate()
-        self.is_answerable = self.answerable()
 
     def evaluate_latency_and_generate(self):
         start_time = time.time()
@@ -28,6 +26,7 @@ class EvalRag:
         response = generate_response(self.query,context)
         end_time = time.time()
         total_latency = end_time - start_time
+        eval_logger.info(f"Latency for {self.query}: {total_latency}")
         self._add_metric('total_latency', float(total_latency))
         return response.choices[0].message.content, context, sources
 
@@ -37,133 +36,167 @@ class EvalRag:
             cls.metrics[metric_name].append(value)
 
     @classmethod
-    def _add_fallback(cls, query):
+    def _track_problematic_events(cls,query,context_rel,groundedness,answer_rel):
         with cls.metrics_lock:
-            cls.metrics["fallback_score"] += 1
-            cls.metrics["fallback_queries"].append(query)
+            if context_rel == 'LOW':
+                cls.metrics['low_cr_queries'].append(query)
+                eval_logger.warning(f'"Low Context Relevance"  for {query}')
 
-    @classmethod
-    def _add_low_score_query(cls, metric_type, query, score):
-        if score >= cls.LOW_SCORE_THRESHOLD:
-            return
+            if groundedness == 'UNSUPPORTED':
+                cls.metrics['low_gr_queries'].append(query)
+                eval_logger.warning(f'"UNSUPPORTED Groundedness" for {query}')
 
-        with cls.metrics_lock:
-            cls.metrics["low_score_queries"].append({
-                "metric_type": metric_type,
-                "query": query,
-                "score": score,
-            })
-            eval_loger.debug(f'Got lower {metric_type} score: {score} for {query}')
+            if answer_rel == 'IRRELEVANT':
+                cls.metrics['low_ar_queries'].append(query)
+                eval_logger.warning(f'"IRRELEVANT Answer Relevance"  for {query}')
+
 
     @staticmethod
-    def _score_from_response(response):
-        content = response.choices[0].message.content.strip()
-        match = re.search(r"(?<!\d)(?:0(?:\.\d+)?|1(?:\.0+)?)(?!\d)", content)
-        if match:
-            return float(match.group(0))
-        eval_loger.warning(f"Could not parse evaluation score from: {content}")
-        return 0.0
-
-    @staticmethod
-    def _average(values):
-        if not values:
-            return 0.0
-        return sum(values) / len(values)
-
-    def answerable(self):
-        no_context_phrases = ["no context",
-        "not found",
-        "no relevant",
-        "no information",
-        "unable to find"
+    def _label_from_response(response):
+        content = response.choices[0].message.content.strip().upper()
+        ordered_labels = [
+            "PARTIALLY SUPPORTED",
+            "PARTIALLY RELEVANT",
+            "UNSUPPORTED",
+            "SUPPORTED",
+            "IRRELEVANT",
+            "RELEVANT",
+            "MEDIUM",
+            "HIGH",
+            "LOW"
         ]
 
-        is_answerable = not any(phrase in self.response.lower() for phrase in no_context_phrases)
+        for label in ordered_labels:
 
-        return is_answerable
+            if content == label:
+                return label
+
+        eval_logger.debug(
+            f"Could not parse evaluation label from: {content}"
+        )
+        return "UNKNOWN"
+
 
     def context_relevance(self):
         con_rel_prompt = f'''
-            You are an expert evaluator. Rate if this context can answer the query.
-            Output between the range of 0 to 1(probabilities): 
-            -Higher probability if a context is able to answer the given query.
-            -Lower probability if a context is not able to answer the given query
-            Context: {self.context}
-            Query: {self.query}
-            Output only probabilities, no reasoning
-            '''
+        You are an evaluator for a RAG system.
+        Classify whether the context can answer the query.
+        Labels:
+        HIGH:
+        - Context fully contains the information needed.
+        MEDIUM:
+        - Context partially answers the query.
+        LOW:
+        - Context does not contain enough information.
+
+        Context:
+        {self.context}
+
+        Query:
+        {self.query}
+
+        Output only one label:
+        HIGH, MEDIUM, or LOW
+        '''
         context_relevance_score = groq_client.chat.completions.create(
             model='openai/gpt-oss-120b',
             messages=[{"role": "user", "content": con_rel_prompt}],
             temperature=0)
-        score = self._score_from_response(context_relevance_score)
-        self._add_metric('context_relevance_score', score)
-        self._add_low_score_query('context_relevance', self.query, score)
+        label = self._label_from_response(context_relevance_score)
+        eval_logger.info(f'Context relevance: "{label}" for {self.query}')
+        self._add_metric('context_relevance', label)
+        return label
 
     def ground_ness(self):
-        ground_ness_prompt = f'''
-            You are an auditing algorithm. Verify if a value is explained by the given context.
-            Output between the range of 0 to 1(probabilities): 
-            - Higher probability if a value is from the give context only.
-            - Lower probability if a value is not from the give context.
-            Context:
-            {self.context}
-            Value to verify:
-            {self.response}
-            Answer only score, no justification'''
+        ground_ness_prompt = f'''<|im_start|>system
+        You are an auditing algorithm. Verify if a response is explicitly supported by the context.
+        Output only labels: 
+        SUPPORTED: If the response is fully supported by the context.
+        PARTIALLY_SUPPORTED: If the response is somewhere supported by the context.
+        UNSUPPORTED: If the response is not at all supported by the context.<|im_end|>system
+        <|im_start|>user
+        Context:
+        {self.context}
+
+        Answer:
+        {self.response}
+        
+        Output ONLY one label:
+        SUPPORTED
+        PARTIALLY SUPPORTED
+        UNSUPPORTED
+        <|im_end|>user'''
 
         grounded_score = groq_client.chat.completions.create(
             model='openai/gpt-oss-120b',
             messages=[{"role": "user", "content": ground_ness_prompt}],
             temperature=0)
 
-        score = self._score_from_response(grounded_score)
-        self._add_metric('ground_ness_score', score)
-        self._add_low_score_query('ground_ness', self.query, score)
+        label = self._label_from_response(grounded_score)
+        eval_logger.info(f'Groundedness: "{label}" for {self.query}')
+        self._add_metric('ground_ness', label)
+        return label
 
     def answer_relevance(self):
         ans_rel_prompt = f'''
-            You are an expert evaluator for a RAG-based question answering system.
-            Your task is to judge ANSWER RELEVANCE,  whether the answer directly addresses the user's question, stays on topic, and provides information at the appropriate scope.
-            Output between the range of 0 to 1(probabilities):
-            - Higher probability if answers the question with the right scope and no unnecessary off-topic content.
-            - Lower probability if do not answer the question with the right scope and is off-topic.
-            Query: {self.query}
-            Answer: {self.response}
-            Output only probabilities, no reasoning'''
+        You are an evaluator for a RAG system.
+        Determine whether the answer addresses the user's query appropriately.
+        
+        Labels:
+        RELEVANT:
+        - Answer directly addresses the query.
+        PARTIALLY RELEVANT:
+        - Answer partially addresses the query.
+        IRRELEVANT:
+        - Answer does not address the query properly.
+        Important:
+        If the context does not contain enough information and the answer correctly refuses to answer, classify it as RELEVANT.
+
+        Query:
+        {self.query}
+
+        Answer:
+        {self.response}
+
+        Output only one label:
+        RELEVANT, PARTIALLY RELEVANT, or IRRELEVANT
+        '''
 
         ans_relevance_score = groq_client.chat.completions.create(
             model='openai/gpt-oss-120b',
             messages=[{"role": "user", "content": ans_rel_prompt}],
             temperature=0)
 
-        score = self._score_from_response(ans_relevance_score)
-        self._add_metric('answer_relevance_score', score)
-        self._add_low_score_query('answer_relevance', self.query, score)
+        label = self._label_from_response(ans_relevance_score)
+        eval_logger.info(f'Answer relevance: "{label}" for {self.query}')
+        self._add_metric('answer_relevance', label)
+        return label
+
 
 
     def generate_report(self):
-        if  self.is_answerable:
-            self.context_relevance()
-            self.ground_ness()
-            self.answer_relevance()
-        else:
-            self._add_fallback(self.query)
-            eval_loger.debug(f'No context found in the articles {self.query}')
+        context_rel = self.context_relevance()
+        groundedness = self.ground_ness()
+        ans_rel = self.answer_relevance()
+
+        self._track_problematic_events(
+            self.query,context_rel,groundedness,ans_rel
+        )
 
     @classmethod
     def summary(cls):
         with cls.metrics_lock:
             total_queries = len(cls.metrics['total_latency'])
+            avg_latency = (sum(cls.metrics['total_latency']) / total_queries if total_queries > 0 else 0)
             return {
                 'total_queries': total_queries,
-                'average_total_latency': cls._average(cls.metrics['total_latency']),
-                'average_context_relevance': cls._average(cls.metrics['context_relevance_score']),
-                'average_ground_ness': cls._average(cls.metrics['ground_ness_score']),
-                'average_answer_relevance': cls._average(cls.metrics['answer_relevance_score']),
-                'fallback_score': cls.metrics['fallback_score'],
-                'fallback_queries': list(cls.metrics['fallback_queries']),
-                'low_score_queries': list(cls.metrics['low_score_queries']),
+                'average_total_latency': avg_latency,
+                'context_relevance_distribution': dict(Counter(cls.metrics['context_relevance'])),
+                'ground_ness_distribution': dict(Counter(cls.metrics['ground_ness'])),
+                'answer_relevance_distribution': dict(Counter(cls.metrics['answer_relevance'])),
+                'low_cr_queries': list(cls.metrics['low_cr_queries']),
+                'low_gr_queries': list(cls.metrics['low_gr_queries']),
+                'low_ar_queries': list(cls.metrics['low_ar_queries'])
             }
 
 

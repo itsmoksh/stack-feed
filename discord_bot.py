@@ -77,40 +77,61 @@ async def send_digest():
 # Build the evaluation metrics after QnA
 def build_metrics_embed():
     summary = EvalRag.summary()
-    fallback_queries = summary['fallback_queries']
-    low_score_queries = summary['low_score_queries']
-    fallback_text = "None"
-    if fallback_queries:
-        fallback_text = "\n".join([f"- {query}" for query in fallback_queries[:10]])
-
-    low_score_text = "None"
-    if low_score_queries:
-        low_score_text = "\n".join([
-            f"- {item['metric_type']}: {item['score']:.2f} | {item['query']}"
-            for item in low_score_queries[:10]
-        ])
+    total_queries = max(summary['total_queries'], 1)
+    context_relevance_distribution = summary['context_relevance_distribution']
+    ground_ness_distribution = summary['ground_ness_distribution']
+    answer_relevance_distribution = summary['answer_relevance_distribution']
+    low_cr_queries = summary['low_cr_queries']
+    low_gr_queries = summary['low_gr_queries']
+    low_ar_queries = summary['low_ar_queries']
 
     embed = discord.Embed(
-        title="RAG Evaluation Summary(Stack Feed)",
+        title="RAG Evaluation Summary (Stack Feed)",
         description="RAG metrics for the latest bot run.",
         color=0x2ECC71,
         timestamp=datetime.now(TIME_ZONE)
     )
     embed.add_field(name="Total Questions", value=str(summary['total_queries']), inline=True)
-    embed.add_field(name="Fallback Count", value=str(summary['fallback_score']), inline=True)
     embed.add_field(name="Avg Latency", value=f"{summary['average_total_latency']:.2f} sec", inline=True)
-    embed.add_field(name="Avg Context Relevance", value=f"{summary['average_context_relevance']:.2f}", inline=True)
-    embed.add_field(name="Avg Ground-ness", value=f"{summary['average_ground_ness']:.2f}", inline=True)
-    embed.add_field(name="Avg Answer Relevance", value=f"{summary['average_answer_relevance']:.2f}", inline=True)
-    embed.add_field(name="Fallback Queries", value=fallback_text[:1024], inline=False)
-    embed.add_field(name="Low Score Queries (< 0.85)", value=low_score_text[:1024], inline=False)
+
+    if context_relevance_distribution:
+        embed.add_field(name= 'Context Relevance Distribution', value = "\n".join(
+            [f"{category.title()}: {round((query_count*100)/total_queries)}%" for category,query_count in context_relevance_distribution.items()]),
+                        inline = False)
+
+    if ground_ness_distribution:
+        embed.add_field(name = 'Groundedness Distribution', value = "\n".join(
+            [f"{category.title()}: {round((query_count * 100) /total_queries)}%" for category, query_count
+             in ground_ness_distribution.items()]),
+                        inline = False)
+
+    if answer_relevance_distribution:
+        embed.add_field(name= 'Answer Relevance Distribution', value = "\n".join(
+            [f"{category.title()}: {round((query_count * 100) /total_queries)}%" for category, query_count
+             in answer_relevance_distribution.items()]),
+                        inline = False)
+
+    if low_cr_queries:
+        embed.add_field(name = 'Low Context Relevance Queries',
+                        value= "\n".join(low_cr_queries)[:1024],
+                        inline = False)
+
+    if low_gr_queries:
+        embed.add_field(name = 'Unsupported Groundedness Queries',
+                       value= "\n".join(low_gr_queries)[:1024],
+                       inline = False)
+
+    if low_ar_queries:
+        embed.add_field(name = 'Irrelevant Answer Queries',
+                        value = "\n".join(low_ar_queries)[:1024],
+                        inline = False)
+
     return embed
 
 async def answer_in_thread(thread, question):
     eval_result = await asyncio.to_thread(EvalRag,question)
     await thread.send(eval_result.response)
-    if eval_result.is_answerable:
-        await thread.send(f"Sources: {eval_result.sources}")
+    await thread.send(f"Sources: {eval_result.sources}")
     await asyncio.to_thread(eval_result.generate_report)
 
 async def close_all_qna_threads():
