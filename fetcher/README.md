@@ -1,14 +1,13 @@
 # Fetcher Component - Stack Feed
 
-The fetcher is the first component of StackFeed, that automatically fetches the weekly latest articles, blogs, and news from Multiple sources such as RSS feeds, non-RSS feeds, newsletters from Gmail.  It serves as the data collection layer that gathers raw content before it's summarized and presented to users.
+The fetcher is the first component of StackFeed, which automatically fetches the latest weekly articles, blogs, and news from Multiple sources such as RSS feeds, non-RSS feeds, and newsletters from Gmail.  It serves as the data collection layer that gathers raw content before it’s summarized and presented to users.
 
 ## Overview
 There are 2 types of Fetchers:
 1. **Gmail Fetcher** - Extract newsletters from your Gmail inbox
 2. **Feed Fetcher** - Collect articles from AI company RSS feeds and custom sources
 
-Defined a config.json where all the sources their URLs and fetch type are stored. You can also update them based on your preference.
-All fetched articles are aggregated and stored in a latest_news.json file, which is then passed to the Summarizer component.
+Defined a config.json where all the sources, their URLs and fetch type are stored. You can also update them based on your preference.All fetched articles are aggregated and stored in a latest_news.json file, which is then passed to the Summarizer component.
 
 ---
 ## Architecture
@@ -20,18 +19,18 @@ All fetched articles are aggregated and stored in a latest_news.json file, which
 
 Fetches newsletters directly from your Gmail inbox using the Gmail API.
 
-#### Setup Gmail credentials
-- Go to google developers console (https://console.cloud.google.com/)
-- Select one of the existing project, or create a new one
-- Got to APIs and Services and search for Gmail API in library and enable it
-- Go to credentials at the left sidebar, and configure consent screen, if not done before.
-    - Enter the app name, user support email in the **App Information** and click next
-    - Either choose internal or external for audience
-    - Mention down your Email address in contact information
-    - Click on Finish and Create
+Set up Gmail credentials
+- Go to Google Developers Console (https://console.cloud.google.com/)
+- Select one of the existing projects, or create a new one
+- Go to APIs and Services, search for Gmail API in the library, and enable it
+- Go to credentials in the left sidebar, and configure the consent screen, if not done before.
+  - Enter the app name and the user support email in the **App Information** and click Next
+  - Either choose internal or external for the audience
+  - Mention your Email address in the contact information
+  - Click on Finish and Create
 - Go to **Create 0Auth client** and choose the application type as **Web Application**
-- Enter name, and click on create.
-- A pop-up will apper, OAuth client created. Download the JSON file and store it as gmail_credentials.json inside fetcher ('fetcher/gmail_credentials.json')
+- Enter your name, and click on create.
+- A pop-up will appear, OAuth client created. Download the JSON file and store it as gmail_credentials.json inside fetcher (‘fetcher/gmail_credentials.json’)
 
 #### Working
 1. Authenticates with Gmail API using OAuth credentials and create tokens.
@@ -43,10 +42,10 @@ Fetches newsletters directly from your Gmail inbox using the Gmail API.
 ### 2. Feed Fetcher
 **File:** `feed_fetcher.py`
 
-Collect Articles, blogs directly from the AI company's website. 
+Collect Articles blogs directly from the AI company's website. 
 
 #### Supported Sources:
-**RSS Sources**: Fetches all the weekly article URLs directly using feed parser.
+**RSS Sources**: Fetches all the weekly article URLs directly using a feed parser.
 - OpenAI 
 - Deep Mind 
 
@@ -55,7 +54,7 @@ Collect Articles, blogs directly from the AI company's website.
 
 #### Working
 1. Fetches RSS feeds from the company's websites using Feed Parser.
-2. Extracts article URLs from the Non RSS sources.
+2. Extracts article URLs from the non-RSS sources.
 3. Filter them by category (Product, Models, Research) and published date.
 4. Extract article content using Trafilatura.
 

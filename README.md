@@ -1,6 +1,6 @@
 # Stack Feed
 
-Stack feed is a weekly AI digest bot for the Discord community. It collects recent AI updates from leading company blogs, web pages, news articles, and selected newsletters, summarize them into the valuable points and send the weekly digest to the Discord (every Sunday 10 a.m). It is beneficial for AI engineers who want to keep updating themselves with the AI updates in this continuously evolving market. 
+Stack feed is a weekly AI digest bot for the Discord community. It collects recent AI updates from leading company blogs, web pages, news articles, and selected newsletters, summarizes them into valuable points and sends the weekly digest to Discord (every Sunday at 10 a.m). It is beneficial for AI engineers who want to keep up with AI developments in this continuously evolving market.
 
 It is also powered by a hybrid RAG pipeline over the latest digest content. It stores semantic and keyword-searchable chunks in Qdrant, answers from retrieved context only, and posts evaluation metrics after the Q&A window closes.
 
@@ -8,11 +8,10 @@ It is also powered by a hybrid RAG pipeline over the latest digest content. It s
 
 - Fetches weekly AI updates from RSS feeds, non-RSS pages, and Gmail newsletters.
 - Summarizes each article with Groq-hosted LLMs (openai/gpt-oss120b).
-- Posts categorized digest embeds to a Discord channel.
-- Opens a two-hour Q&A window after each digest.
+- Posts categorized digest embeds to a Discord channel. Opens a two-hour Q&A window after each digest.
 - Creates per-user Discord threads for follow-up questions.
 - Uses Qdrant hybrid retrieval with dense embeddings (all-MiniLM-L6-v2) and BM25 sparse retrieval.
-- Continuously tracks RAG quality metrics such as latency, context relevance, groundedness, answer relevance, fallback queries, and low-scoring queries, and sends to the discord channel after Q&A.
+- Continuously tracks RAG quality metrics such as latency, context relevance, groundedness, answer relevance, low context relevance queries, unsupported groundedness queries, irrelevant answer relevance queries, and sends to the Discord channel after Q&A.
 - Uploads bot logs as a GitHub Actions artifact.
 
 ## Architecture
@@ -21,7 +20,7 @@ It is also powered by a hybrid RAG pipeline over the latest digest content. It s
 ## How It Works
 
 1. `summarizer.py` loads sources from `fetcher/config.json`.
-2. `fetcher/feed_fetcher.py` collects recent blog posts from RSS and configured non-RSS pages.
+2. `fetcher/feed_fetcher.py` collects recent blog posts from RSS and configures non-RSS pages.
 3. `fetcher/gmail_fetcher.py` collects recent newsletters from configured senders.
 4. The raw weekly articles are written to `latest_news.json`.
 5. Groq summarizes each article into 3 to 5 concise bullet points.
@@ -42,10 +41,10 @@ It is also powered by a hybrid RAG pipeline over the latest digest content. It s
     uv sync
     ```
    
-3. Set-up Gmail and Discord Credentials:
-   - For setting up Gmail Credentials, refer this: [Fetcher Readme](fetcher/README.md)
+3. Set up Gmail and Discord Credentials:
+   - For setting up Gmail Credentials, refer to this: [Fetcher Readme](fetcher/README.md)
    - For getting Discord Credentials:
-     - Go to [Discord Developer's Portal](https://discord.com/developers/applications) and login with your discord account.
+     - Go to [Discord Developer's Portal](https://discord.com/developers/applications) and log in with your discord account.
      - Click on create **New Application**, and name it.
      - On the left sidebar, click on **Bot**, add details and click on reset token to get the **Discord Token**.
      - Now go to **OAuth2**, scroll down to 'OAuth2 URL Generator' and choose **Bot**.
@@ -55,7 +54,7 @@ It is also powered by a hybrid RAG pipeline over the latest digest content. It s
        3. Send Messages in Threads.
        4. Embed Links
        5. Attach Files, and copy the generated url to call the bot. 
-     - Enable Developers option into your discord account and then you will be able to copy the channel IDs.
+     - Enable the Developers option in your Discord account, and then you will be able to copy the channel IDs.
 
 4. Create a `.env` file in the project root:
 
