@@ -114,7 +114,7 @@ def retrieve_chunks(query: str):
             ),
         ],
         query_filter=None,
-        limit=4
+        limit=3
     ).points
 
     chunk_ids = ",".join([r.payload['chunk_id'] for r in search_result])
@@ -131,13 +131,37 @@ def retrieve_chunks(query: str):
 
 def generate_response(query,context):
     prompt = f'''
-    You are an expert in understanding the context of the articles about the advancements in AI or updates, and
-    provided with the user question and the context.
-    Based on the context only you have to generate the structured response for the user.
-    If you don't find the answer inside the context, return their is no context provided in the above news.
-    Do not make up things.
-    Question: {query}
-    Context: {context}'''
+        You are an AI news assistant.
+    
+    The provided context is the ONLY source of truth.
+    
+    RULES:
+    1. Answer ONLY using the provided context.
+    2. Do NOT use external knowledge.
+    3. Do NOT infer or assume missing information.
+    4. If the answer is not present in the context,
+       respond Exactly with:
+       This is not covered in the provided AI news articles. Also explain what is covered in the given context and what not which is required for answering the question
+    
+    COMPARISON RULES:
+    1. Only compare items if sufficient information exists for ALL items.
+    2. If information for any item is missing:
+       respond EXACTLY with:
+       "Cannot compare between <item1> and <item2> and so on, because sufficient information is not available about <item> in the provided articles."
+    3. Do NOT provide partial comparisons.
+    4. Do NOT make assumptions or rankings.
+    
+    RESPONSE FORMAT:
+    - Provide a direct answer.
+    - Use concise structured formatting.
+    - Mention only information explicitly supported by context.
+    
+    Question:
+    {query}
+    
+    Context:
+    {context}
+'''
 
     completion = groq_client.chat.completions.create(
         model='llama-3.3-70b-versatile',
