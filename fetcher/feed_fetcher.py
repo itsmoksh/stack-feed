@@ -53,22 +53,28 @@ class FeedFetcher:
             for article in articles:
                 link = article['href']
                 text = article.get_text()
-
-                _,add = link.split('/news')
-                url = f'{metadata["url"]}{add}'
-                published_date,category = None,None
+                url = None
                 try:
-                    pattern = r"(\w+\s+\d{1,2},\s+\d{4})([A-Z][a-z]+)"
-                    match = re.search(pattern,text)
-                    date_str,category = match.groups()
-                    published_date = datetime.strptime(date_str, "%b %d, %Y")
+                    _,add = link.split('/news')
+                    url = f'{metadata["url"]}{add}'
                 except:
-                    feed_logger.debug(f"Either did not find the published date or a category for {url}")
+                    feed_logger.error("Unable to split the source to get the news address")
 
-                if category is not None and category in metadata['fetch_type']:
-                    if published_date is not None and published_date > self.since_date:
-                        no_rss_urls.append({'link':url,'category':category.lower()})
-                        feed_logger.info(f"Non RSS URL found; URL: {link}, Category: {category}, Published Date: {published_date}")
+                published_date,category = None,None
+                if url:
+                    try:
+                        pattern = r"(\w+\s+\d{1,2},\s+\d{4})([A-Z][a-z]+)"
+                        match = re.search(pattern,text)
+                        date_str,category = match.groups()
+                        published_date = datetime.strptime(date_str, "%b %d, %Y")
+
+                    except:
+                        feed_logger.debug(f"Either did not find the published date or a category for {url}")
+
+                    if category is not None and category.lower() in metadata['fetch_type']:
+                        if published_date is not None and published_date > self.since_date:
+                            no_rss_urls.append({'link':url,'category':category.lower()})
+                            feed_logger.info(f"Non RSS URL found; URL: {link}, Category: {category}, Published Date: {published_date}")
 
             if no_rss_urls:
                 self.scrapped_links[source] = no_rss_urls
