@@ -7,6 +7,10 @@
     "DeepMind": {
       "url": "https://deepmind.google/blog/rss.xml",
       "fetch_type": ["models","research"]
+    },
+    "MistralAI": {
+      "url": "https://mistral.ai/rss.xml",
+      "fetch_type": ["products","research"]
     }
   },
   "no_rss_sources": {
