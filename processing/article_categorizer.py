@@ -89,10 +89,10 @@ class ArticleCategorizer():
             else:
                 if (top_title_score - second_title_score) > title_delta:
                     label = top_title_cat
-                    categorize_logger.info(f"Article talks about multiple categories, {label} is selected based on title score{top_title_score}")
+                    categorize_logger.info(f"{article_info} talks about multiple categories, {label} is selected based on title score{top_title_score}")
                 else:
                     label = "General"
-                    categorize_logger.info(f"Article talks about multiple categories, and have congested scores for both title and chunks. Hence labelled as {label}")
+                    categorize_logger.info(f"{article_info} talks about multiple categories, and have congested scores for both title and chunks. Hence labelled as {label}")
 
             results[article_info] = label
         categorize_logger.info(f"Differences between top 2 categories for chunks: {avg_diff_chunks_top2}")

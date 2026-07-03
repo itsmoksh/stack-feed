@@ -3,10 +3,11 @@ import time
 from fetcher.gmail_fetcher import GmailFetcher
 from fetcher.feed_fetcher import FeedFetcher
 from processing.article_categorizer import ArticleCategorizer
-from groq import Groq
+from groq import Groq, RateLimitError
 from dotenv import load_dotenv
 from logging_setup import setup_logger
 load_dotenv()
+import re
 from pathlib import Path
 
 #Setting up the summarizer logger
@@ -50,7 +51,7 @@ def extract_news():
         summarize_logger.info("All the weekly news are stored in 'latest_news.json'")
     return latest_news
 
-def summarize_article(content,category):
+def summarize_with_retry(content,category):
     system_prompt = f"""You are StackFeed, an AI digest assistant for a Discord community 
     of AI engineering learners and enthusiasts.
 
@@ -77,13 +78,25 @@ def summarize_article(content,category):
     - bullet 3
     - bullet 4 (if necessary)
     - bullet 5 (if necessary)"""
-    completion = client.chat.completions.create(
-        model="openai/gpt-oss-120b",
-        messages=[
-            {'role': 'system', 'content': system_prompt},
-            {"role": "user", "content": content}]
-    )
-    return completion.choices[0].message.content
+    for attempt in range(5):
+        try:
+            return client.chat.completions.create(
+                model="openai/gpt-oss-120b",
+                messages=[
+                    {'role': 'system', 'content': system_prompt},
+                    {"role": "user", "content": content}]
+            )
+        except RateLimitError as e:
+            match = re.search(r"try again in ([\d.]+)(ms|s)",str(e))
+            if match:
+                value = float(match.group(1))
+                unit = match.group(2).lower()
+                wait_time = value / 1000 if unit == 'ms' else value
+                summarize_logger.warning(f"Rate Limit Exceeded, retrying in {wait_time} seconds. Attempt #{attempt+1}")
+                time.sleep(wait_time)
+            else:
+                time.sleep(60)
+        raise RuntimeError(f"Exceed maximum number of attempts.")
 
 
 def summarize(refresh:bool = False, news_path = news_path):
@@ -100,8 +113,7 @@ def summarize(refresh:bool = False, news_path = news_path):
     for category, articles in latest_news.items():
         summarized_news[category] = []
         for article in articles:
-            summary = summarize_article(article['content'],category)
-            time.sleep(2) # To prevent the rate limit of Groq
+            summary = summarize_with_retry(article['content'],category)
             summarized_article={
                 "title": article['title'],
                 "summary": summary,
