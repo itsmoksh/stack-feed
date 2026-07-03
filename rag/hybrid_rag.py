@@ -48,20 +48,22 @@ def ingest_digest(refresh = True):
             rag_logger.info("Deleted the 'weekly_digest' collection ")
 
             # Creating a same collection again
-            setup_collection()
-            rag_logger.info("Recreated the 'weekly_digest' collection")
-        else:
-            setup_collection()
+        setup_collection()
+        rag_logger.info("Recreated the 'weekly_digest' collection")
 
-    docs, metadata = chunker()
-    rag_logger.info("Chunks created, storing them into the Qdrant database")
-    client.upload_collection(
-        collection_name="weekly_digest",
-        vectors=tqdm(docs),
-        payload=metadata,
-        parallel=4,
-    )
-    rag_logger.info("Chunks uploaded, and ready for QnA..")
+        docs, metadata = chunker()
+        rag_logger.info("Chunks created, storing them into the Qdrant database")
+        client.upload_collection(
+            collection_name="weekly_digest",
+            vectors=tqdm(docs),
+            payload=metadata,
+            parallel=4,
+        )
+        rag_logger.info("Chunks uploaded, and ready for QnA..")
+
+    else:
+        rag_logger.info("Refresh is False, No need to create a new collection.")
+        return
 
 def chunker():
     with open(news_path, 'r') as f:
@@ -94,7 +96,7 @@ def chunker():
                     'text': chunk.text,
                     'title': article['title'],
                     'category': category,
-                    'source': article['source'],
+                    'source': article['url'],
                 })
     return docs, metadata
 
@@ -171,8 +173,8 @@ def generate_response(query,context):
     return completion
 
 if __name__ == '__main__':
-    ingest_digest()
-    query = 'Is there any cost associated with gpt 5.5 model?'
+    ingest_digest(refresh=False)
+    query = 'What are the safety mechanism introduced in Sol'
     _,sources,context = retrieve_chunks(query)
     answer= generate_response(query,context)
     print(answer.choices[0].message.content)
