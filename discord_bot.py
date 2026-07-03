@@ -1,6 +1,6 @@
 import discord
-from discord.ext import commands, tasks
-from summarizer import summarize
+from discord.ext import commands
+from processing.summarizer import summarize
 from rag.hybrid_rag import ingest_digest
 from rag.rag_eval import EvalRag
 from dotenv import load_dotenv
@@ -48,13 +48,18 @@ async def send_digest():
     channel = await get_digest_channel()
 
     await channel.send(f"Preparing this week's AI Digest..")
-    summarized_news = summarize(refresh=True)
+    summarized_news = await asyncio.to_thread(summarize,refresh=True)
+    sorted_news = dict(sorted(summarized_news.items()))
     await asyncio.to_thread(ingest_digest, refresh=True)
     article_count = 0
-    for category, articles in summarized_news.items():
+    for category, articles in sorted_news.items():
 
-        # Send category header
-        await channel.send(f"**{category.title()} updates**")
+        if category == 'General':
+            await channel.send(f"**General/Overall updates this week**")
+        elif category == 'newsletter':
+            await channel.send(f"**Published Newsletters this week**")
+        else:
+            await channel.send(f"**{category.title()} updates**")
 
         for idx, article in enumerate(articles, start=1):
             article_count += 1
@@ -149,9 +154,6 @@ async def close_all_qna_threads():
             await thread.edit(archived=True, locked=True)
 
 async def close_bot_after_qna_window():
-    while qna_window_end is None:
-        await asyncio.sleep(1)
-
     remaining_seconds = (qna_window_end - datetime.now(TIME_ZONE)).total_seconds()
     if remaining_seconds > 0:
         await asyncio.sleep(remaining_seconds)

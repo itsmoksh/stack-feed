@@ -14,6 +14,10 @@ from logging_setup import setup_logger
 log_path = Path(__file__).parent.parent/'stack_feed.log'
 gmail_logger = setup_logger('gmail_logger',log_path)
 
+#File Paths
+token_path = Path(__file__).parent.parent/'fetcher/token.json'
+gmail_cred_path = Path(__file__).parent.parent/'fetcher/gmail_credentials.json'
+
 class GmailFetcher:
     def __init__(self):
         self.service = self._get_service()
@@ -22,17 +26,17 @@ class GmailFetcher:
     def _get_service(self):
         SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
         creds = None
-        if os.path.exists("fetcher/token.json"):
-            creds = Credentials.from_authorized_user_file("fetcher/token.json", SCOPES)
+        if os.path.exists(token_path):
+            creds = Credentials.from_authorized_user_file(str(token_path), SCOPES)
             # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file("fetcher/gmail_credentials.json", SCOPES)
+                flow = InstalledAppFlow.from_client_secrets_file(str(gmail_cred_path), SCOPES)
                 creds = flow.run_local_server(port=0)
             # Save the credentials for the next run
-            with open("fetcher/token.json", "w") as token:
+            with open(token_path, "w") as token:
                 token.write(creds.to_json())
 
         try:
@@ -167,7 +171,7 @@ class GmailFetcher:
             subject = next((header['value'] for header in headers if header['name'] == 'Subject'), 'No Subject')
             # Retrieving content
             content = self._get_email_body(email['payload'])
-            newsletters.append({'title': subject, 'source':sender_email,'content': content})
+            newsletters.append({'title': subject, 'url':sender_email,'content': content})
             gmail_logger.info(f"Found Newsletter: {subject} from {sender_email}")
         return newsletters
 
