@@ -80,12 +80,13 @@ def summarize_with_retry(content,category):
     - bullet 5 (if necessary)"""
     for attempt in range(5):
         try:
-            return client.chat.completions.create(
+            completion =  client.chat.completions.create(
                 model="openai/gpt-oss-120b",
                 messages=[
                     {'role': 'system', 'content': system_prompt},
                     {"role": "user", "content": content}]
             )
+            return completion.choices[0].message.content
         except RateLimitError as e:
             match = re.search(r"try again in ([\d.]+)(ms|s)",str(e))
             if match:
