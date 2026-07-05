@@ -3,6 +3,7 @@
 The RAG (Retrieval Augmented Generation) Pipeline is an intelligent Q&A system of Stack Feed designed to ask questions about the weekly AI news digest and receive accurate, grounded answers using a hybrid semantic search and a Large language model.
 
 ### How it works:
+- Loads the categorized raw articles and newsletters from `latest_news.json`, preserving each item's processing category as Qdrant metadata.
 - Chunk the article contents using Chonkie based on semantic similarity.
 - Ingest these chunks into the Qdrant database as a dense embedding(all-MiniLM-L6-v2) and a sparse embedding(BM25). 
 - Find the top 3 article chunks based on the similarity with the user query(hybrid search). 

@@ -16,7 +16,8 @@ QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
 client = QdrantClient(
     url=QDRANT_URL,
     api_key=QDRANT_API_KEY,
-    cloud_inference=True
+    cloud_inference=True,
+    timeout=60
 )
 #Groq Client
 groq_client = Groq()
