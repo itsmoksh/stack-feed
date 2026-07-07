@@ -16,7 +16,7 @@ It is also powered by a hybrid RAG pipeline over the latest digest content. It s
 - Uploads bot logs as a GitHub Actions artifact.
 
 ## Architecture
-![Fetcher Architecture](assets/overall_workflow.png)
+![Architecture](assets/overall_workflow.png)
 
 ## How It Works
 
