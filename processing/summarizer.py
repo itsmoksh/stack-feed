@@ -97,7 +97,7 @@ def summarize_with_retry(content,category):
                 time.sleep(wait_time)
             else:
                 time.sleep(60)
-        raise RuntimeError(f"Exceed maximum number of attempts.")
+    raise RuntimeError(f"Exceed maximum number of attempts.")
 
 
 def summarize(refresh:bool = False, news_path = news_path):
