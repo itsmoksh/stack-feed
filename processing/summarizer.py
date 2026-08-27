@@ -1,13 +1,12 @@
 import json
-import time
 from fetcher.gmail_fetcher import GmailFetcher
 from fetcher.feed_fetcher import FeedFetcher
 from processing.article_categorizer import ArticleCategorizer
-from groq import Groq, RateLimitError
+from groq import Groq
 from dotenv import load_dotenv
 from logging_setup import setup_logger
+from groq_retry import run_groq_with_retry
 load_dotenv()
-import re
 from pathlib import Path
 
 #Setting up the summarizer logger
@@ -78,26 +77,15 @@ def summarize_with_retry(content,category):
     - bullet 3
     - bullet 4 (if necessary)
     - bullet 5 (if necessary)"""
-    for attempt in range(5):
-        try:
-            completion =  client.chat.completions.create(
-                model="openai/gpt-oss-120b",
-                messages=[
-                    {'role': 'system', 'content': system_prompt},
-                    {"role": "user", "content": content}]
-            )
-            return completion.choices[0].message.content
-        except RateLimitError as e:
-            match = re.search(r"try again in ([\d.]+)(ms|s)",str(e))
-            if match:
-                value = float(match.group(1))
-                unit = match.group(2).lower()
-                wait_time = value / 1000 if unit == 'ms' else value
-                summarize_logger.warning(f"Rate Limit Exceeded, retrying in {wait_time} seconds. Attempt #{attempt+1}")
-                time.sleep(wait_time)
-            else:
-                time.sleep(60)
-    raise RuntimeError(f"Exceed maximum number of attempts.")
+    def make_call():
+        completion = client.chat.completions.create(
+            model="openai/gpt-oss-120b",
+            messages=[
+                {'role': 'system', 'content': system_prompt},
+                {"role": "user", "content": content}]
+        )
+        return completion.choices[0].message.content
+    return run_groq_with_retry(make_call)
 
 
 def summarize(refresh:bool = False, news_path = news_path):

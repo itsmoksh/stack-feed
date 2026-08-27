@@ -5,6 +5,7 @@ import time
 from collections import Counter
 import threading
 from logging_setup import setup_logger
+from groq_retry import run_groq_with_retry
 from pathlib import Path
 load_dotenv()
 
@@ -98,10 +99,12 @@ class EvalRag:
         Output only one label:
         HIGH, MEDIUM, or LOW
         '''
-        context_relevance_score = groq_client.chat.completions.create(
-            model='openai/gpt-oss-120b',
-            messages=[{"role": "user", "content": con_rel_prompt}],
-            temperature=0)
+        def make_call():
+            return groq_client.chat.completions.create(
+                model='openai/gpt-oss-120b',
+                messages=[{"role": "user", "content": con_rel_prompt}],
+                temperature=0)
+        context_relevance_score = run_groq_with_retry(make_call)
         label = self._label_from_response(context_relevance_score)
         eval_logger.info(f'Context relevance: "{label}" for {self.query}')
         self._add_metric('context_relevance', label)
@@ -127,10 +130,12 @@ class EvalRag:
         UNSUPPORTED
         <|im_end|>user'''
 
-        grounded_score = groq_client.chat.completions.create(
-            model='openai/gpt-oss-120b',
-            messages=[{"role": "user", "content": ground_ness_prompt}],
-            temperature=0)
+        def make_call():
+            return groq_client.chat.completions.create(
+                model='openai/gpt-oss-120b',
+                messages=[{"role": "user", "content": ground_ness_prompt}],
+                temperature=0)
+        grounded_score = run_groq_with_retry(make_call)
 
         label = self._label_from_response(grounded_score)
         eval_logger.info(f'Groundedness: "{label}" for {self.query}')
@@ -162,10 +167,12 @@ class EvalRag:
         RELEVANT, PARTIALLY RELEVANT, or IRRELEVANT
         '''
 
-        ans_relevance_score = groq_client.chat.completions.create(
-            model='openai/gpt-oss-120b',
-            messages=[{"role": "user", "content": ans_rel_prompt}],
-            temperature=0)
+        def make_call():
+            return groq_client.chat.completions.create(
+                model='openai/gpt-oss-120b',
+                messages=[{"role": "user", "content": ans_rel_prompt}],
+                temperature=0)
+        ans_relevance_score = run_groq_with_retry(make_call)
 
         label = self._label_from_response(ans_relevance_score)
         eval_logger.info(f'Answer relevance: "{label}" for {self.query}')
