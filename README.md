@@ -8,7 +8,7 @@ It is also powered by a hybrid RAG pipeline over the latest digest content. It s
 
 - Fetches weekly AI updates from RSS feeds, non-RSS pages, and Gmail newsletters.
 - Categorizes company-feed articles with semantic chunk and title similarity into model release, safety, product/tooling, research, general, or filtered categories.
-- Summarizes each article with Groq-hosted LLMs (openai/gpt-oss120b).
+- Summarizes each article with Groq-hosted LLMs (openai/gpt-oss-120b).
 - Posts categorized digest embeds to a Discord channel. Opens a two-hour Q&A window after each digest.
 - Creates per-user Discord threads for follow-up questions.
 - Uses Qdrant hybrid retrieval with dense embeddings (all-MiniLM-L6-v2) and BM25 sparse retrieval.
@@ -107,6 +107,7 @@ The Gmail secrets should be base64-encoded versions of `fetcher/gmail_credential
 stack-feed/
 |-- .github/workflows/weekly-bot.yml  # Manual GitHub Actions runner
 |-- discord_bot.py                    # Discord digest and Q&A bot
+|-- groq_retry.py                     # Shared Groq retry helper
 |-- logging_setup.py                  # Shared file logger setup
 |-- README.md                         # README file
 |-- assets/

@@ -6,9 +6,14 @@ from rag.rag_eval import EvalRag
 from dotenv import load_dotenv
 from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta
+from pathlib import Path
+from logging_setup import setup_logger
 import os
 import asyncio
 load_dotenv()
+
+log_path = Path(__file__).parent / 'stack_feed.log'
+bot_logger = setup_logger('bot_logger', log_path)
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 DIGEST_CHANNEL_ID = int(os.getenv("DIGEST_CHANNEL_ID"))
@@ -63,14 +68,20 @@ async def send_digest():
 
         for idx, article in enumerate(articles, start=1):
             article_count += 1
-            embed = discord.Embed(
-                title=f"{idx}. {article['title']}",
-                description=article['summary'],
-                color=0x5865F2
-            )
-            embed.set_footer(text=f"Source: {article['source']}")
+            try:
+                description = article['summary']
+                if len(description) > 4096:
+                    description = description[:4093] + "..."
+                embed = discord.Embed(
+                    title=f"{idx}. {article['title']}",
+                    description=description,
+                    color=0x5865F2
+                )
+                embed.set_footer(text=f"Source: {article['source']}")
 
-            await channel.send(embed = embed)
+                await channel.send(embed = embed)
+            except Exception as e:
+                bot_logger.error(f"Failed to post article '{article.get('title')}': {e}")
     if article_count == 0:
         await channel.send("No AI news found for this week.")
 
@@ -134,10 +145,14 @@ def build_metrics_embed():
     return embed
 
 async def answer_in_thread(thread, question):
-    eval_result = await asyncio.to_thread(EvalRag,question)
-    await thread.send(eval_result.response)
-    await thread.send(f"Sources: {eval_result.sources}")
-    await asyncio.to_thread(eval_result.generate_report)
+    try:
+        eval_result = await asyncio.to_thread(EvalRag,question)
+        await thread.send(eval_result.response)
+        await thread.send(f"Sources: {eval_result.sources}")
+        await asyncio.to_thread(eval_result.generate_report)
+    except Exception as e:
+        bot_logger.error(f"Failed to answer question '{question}': {e}")
+        await thread.send("Sorry, something went wrong while answering that. Please try asking again in a moment.")
 
 async def close_all_qna_threads():
     for thread_id in qna_thread_ids:
@@ -174,7 +189,18 @@ async def on_ready():
         return
 
     digest_started = True
-    await send_digest()
+    try:
+        await send_digest()
+    except Exception as e:
+        bot_logger.error(f"Digest generation failed: {e}")
+        try:
+            channel = await get_digest_channel()
+            await channel.send("Something went wrong while preparing this week's digest. Please check the logs.")
+        except Exception:
+            pass
+        await bot.close()
+        return
+
     bot.loop.create_task(close_bot_after_qna_window())
 
 @bot.event

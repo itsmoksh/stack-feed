@@ -83,6 +83,9 @@ class FeedFetcher:
                     feed_logger.warning(f"Failed to fetch {link}, skipping")
                     continue
                 content = trafilatura.extract(loader)
+                if not content:
+                    feed_logger.warning(f"Trafilatura could not extract content from {link}, skipping")
+                    continue
                 metadata = trafilatura.extract_metadata(loader)
                 title = metadata.title if metadata else None
                 feed_logger.info(f"Extracted content from {source}; Title: {title}, URL: {link}")
