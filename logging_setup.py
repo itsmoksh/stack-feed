@@ -6,7 +6,8 @@ def setup_logger(name, log_file='stack_feed.log', level=logging.DEBUG):
 
     # Configure the custom logger
     logger.setLevel(level)
-    file_handler = logging.FileHandler(log_file)
+    # used UTF-8 to avoid encoding errors with Unicode characters in logs
+    file_handler = logging.FileHandler(log_file, encoding='utf-8')
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
