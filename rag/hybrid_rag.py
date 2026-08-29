@@ -1,6 +1,7 @@
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, models
 from groq import Groq
+from groq_retry import run_groq_with_retry
 from tqdm import tqdm
 from pathlib import Path
 import os
@@ -25,6 +26,7 @@ groq_client = Groq()
 news_path = Path(__file__).parent.parent/'latest_news.json'
 dense_model_name = "sentence-transformers/all-MiniLM-L6-v2"
 sparse_model_name = "qdrant/bm25"
+generation_model_name = "openai/gpt-oss-20b"
 
 #Setting up the rag logger
 log_path = Path(__file__).parent.parent/'stack_feed.log'
@@ -166,12 +168,13 @@ def generate_response(query,context):
     {context}
 '''
 
-    completion = groq_client.chat.completions.create(
-        model='llama-3.3-70b-versatile',
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0)
+    def make_call():
+        return groq_client.chat.completions.create(
+            model=generation_model_name,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0)
 
-    return completion
+    return run_groq_with_retry(make_call)
 
 if __name__ == '__main__':
     ingest_digest(refresh=False)

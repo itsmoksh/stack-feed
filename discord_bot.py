@@ -30,6 +30,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
+DISCORD_MESSAGE_LIMIT = 2000   # Discord's fixed cap on bot message content
 
 def qna_window_is_open():
     return qna_window_end is not None and datetime.now(TIME_ZONE) < qna_window_end
@@ -144,10 +145,48 @@ def build_metrics_embed():
 
     return embed
 
+def split_message(text, limit=DISCORD_MESSAGE_LIMIT):
+    """
+    Split text into chunks of at most `limit` characters, never cutting
+    a word in half. Prefers paragraph breaks, then sentence ends, then
+    line breaks, then plain word boundaries -- whichever keeps chunks
+    most readable. Falls back to a hard cut only if a single "word"
+    (e.g. a stray long URL) exceeds the limit on its own.
+    """
+    if len(text) <= limit:
+        return [text]
+
+    chunks = []
+    remaining = text
+
+    while len(remaining) > limit:
+        window = remaining[:limit]
+
+        split_at = window.rfind('\n\n')          # paragraph break, first choice
+        if split_at == -1:
+            split_at = window.rfind('. ')         # sentence end, second choice
+            if split_at != -1:
+                split_at += 1
+        if split_at == -1:
+            split_at = window.rfind('\n')         # line break, third choice
+        if split_at == -1:
+            split_at = window.rfind(' ')          # any word boundary, last resort
+        if split_at == -1:
+            split_at = limit                      # unbreakable token -- unavoidable
+
+        chunks.append(remaining[:split_at].rstrip())
+        remaining = remaining[split_at:].lstrip()
+
+    if remaining:
+        chunks.append(remaining)
+
+    return chunks
+
 async def answer_in_thread(thread, question):
     try:
         eval_result = await asyncio.to_thread(EvalRag,question)
-        await thread.send(eval_result.response)
+        for chunk in split_message(eval_result.response):
+            await thread.send(chunk)
         await thread.send(f"Sources: {eval_result.sources}")
         await asyncio.to_thread(eval_result.generate_report)
     except Exception as e:

@@ -7,7 +7,7 @@ The RAG (Retrieval Augmented Generation) Pipeline is an intelligent Q&A system o
 - Chunk the article contents using Chonkie based on semantic similarity.
 - Ingest these chunks into the Qdrant database as a dense embedding(all-MiniLM-L6-v2) and a sparse embedding(BM25). 
 - Find the top 3 article chunks based on the similarity with the user query(hybrid search). 
-- Generate structure and human-readable output using the Groq llama-3.3-70b-versatile model. 
+- Generate structure and human-readable output using the Groq openai/gpt-oss-20b model.
 - The system evaluates the RAG pipeline using three semantic evaluation categories powered by an LLM-as-a-judge approach.
 
 **1. Retrieval Quality**:
