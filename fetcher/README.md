@@ -14,8 +14,34 @@ There are two fetchers:
 ---
 
 ## Architecture
+```mermaid
+flowchart TD
+    A[Fetcher Workflow<br/>Triggered by GitHub Actions] --> B[Feed Script]
+    A --> C[Newsletter Script]
 
-![Fetcher Architecture](../assets/fetcher_workflow.png)
+    B --> D{Source type?}
+    D -- RSS feed --> E[Parse feed entries]
+    D -- Web page --> F[Scrape article page]
+
+    C --> H[Connect to Gmail]
+    H --> I[Authenticate<br/>OAuth]
+    I --> J[Fetch newsletters]
+
+    E --> G[Categorize<br/>Assign articles to labels]
+    F --> G
+    J --> G
+
+    G --> K[Save to articles JSON<br/>Grouped by label]
+
+    classDef start fill:#3a0f0f,stroke:#ef4444,color:#fff
+    classDef feed fill:#2a1a3a,stroke:#a855f7,color:#fff
+    classDef mail fill:#3a300f,stroke:#eab308,color:#fff
+    classDef store fill:#3a2a0f,stroke:#f59e0b,color:#fff
+    class A start
+    class B,D,E,F feed
+    class C,H,I,J mail
+    class G,K store
+```
 
 ## Components
 

@@ -35,7 +35,41 @@ Evaluates whether the generated response appropriately answers the user query, a
 Tracks: Queries where responses were incomplete, vague, or off-topic.
 
 ## Architecture
-![RAG Architecture](../assets/rag_workflow.png)
+```mermaid
+flowchart TD
+    subgraph IDX["Indexing"]
+        A[Articles JSON] --> B[Chonkie<br/>Chunk articles]
+        B --> C[Dense embedding<br/>all-MiniLM-L6-v2]
+        B --> D[Sparse vector<br/>BM25]
+        C --> E[(Qdrant<br/>Dense + sparse index)]
+        D --> E
+    end
+
+    subgraph QA["Question answering"]
+        U[User question<br/>Discord chat] --> Q1[Dense query embedding]
+        U --> Q2[Sparse query vector<br/>BM25]
+        Q1 --> R[Hybrid search<br/>RRF fusion]
+        Q2 --> R
+        E --> R
+        R --> S[Top-k retrieved chunks]
+        S --> T[Groq LLM<br/>Grounded answer]
+        U --> T
+        T --> V[Answer posted<br/>in Discord]
+    end
+
+    subgraph EV["Evaluation"]
+        S --> W[LLM judge<br/>Groundedness, answer relevance,<br/>context relevance]
+        T --> W
+        W --> X[Evaluation metrics]
+    end
+
+    classDef store stroke:#f59e0b,stroke-width:2px
+    classDef llm stroke:#10b981,stroke-width:2px
+    classDef user stroke:#3b82f6,stroke-width:2px
+    class A,E,S store
+    class T,W llm
+    class U,V user****
+```
 
 ## RAG Requirements:
 You need to create a cluster on the Qdrant vector database

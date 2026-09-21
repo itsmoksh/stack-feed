@@ -16,7 +16,35 @@ It is also powered by a hybrid RAG pipeline over the latest digest content. It s
 - Uploads bot logs as a GitHub Actions artifact.
 
 ## Architecture
-![Architecture](assets/overall_workflow.png)
+```mermaid
+---
+config:
+  layout: elk
+---
+flowchart TB
+    A(["Cron Trigger<br>Every Sunday, 10:00 AM"]) --> B["GitHub Actions<br>Runs the pipeline"]
+    B --> C["Feed Script<br>Fetch feed articles"] & D["Newsletter Script<br>Fetch Gmail newsletters"]
+    C --> E["Categorize<br>Assign articles to labels"]
+    D --> E
+    E --> F["Articles JSON<br>Grouped by label"]
+    F --> G["Groq Summarizer<br>One article at a time"] & J[("Qdrant<br>Dense + BM25 index")]
+    G --> H["Discord Server<br>Posted in each category"]
+    H --> I["User"]
+    I -- </br> --> K["Hybrid retrieval<br>RRF fusion"]
+    J --> K
+    K --> L["Groq LLM<br>Grounded answer"]
+    L --> H
+
+     A:::trigger
+     B:::trigger
+     F:::store
+     G:::llm
+     J:::store
+     L:::llm
+    classDef trigger fill:#0f2a4a,stroke:#3b82f6,color:#fff
+    classDef store fill:#3a2a0f,stroke:#f59e0b,color:#fff
+    classDef llm fill:#0f3a2e,stroke:#10b981,color:#fff
+```
 
 ## How It Works
 
