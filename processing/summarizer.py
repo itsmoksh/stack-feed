@@ -1,55 +1,41 @@
 import json
-from fetcher.gmail_fetcher import GmailFetcher
-from fetcher.feed_fetcher import FeedFetcher
-from processing.article_categorizer import ArticleCategorizer
+from json import JSONDecodeError
 from groq import Groq
 from dotenv import load_dotenv
 from logging_setup import setup_logger
+from processing.article_filter import ArticleFilter
+from fetcher.exa_fetcher import fetch_exa_articles
 from groq_retry import run_groq_with_retry
 load_dotenv()
 from pathlib import Path
+
+filtered_articles_path = Path(__file__).resolve().parent.parent / 'filtered_articles.json'
 
 #Setting up the summarizer logger
 log_path = Path(__file__).parent.parent/'stack_feed.log'
 summarize_logger = setup_logger('summarize_logger',log_path)
 
-#File paths
-fetcher_config = Path(__file__).parent.parent/'fetcher/config.json'
-anchor_config = Path(__file__).parent.parent/'processing/anchor_config.json'
-news_path = Path(__file__).parent.parent/'latest_news.json'
+#Filtering articles
+def fetch_and_filter():
+    articles = fetch_exa_articles()
+    article_filter = ArticleFilter(articles)
+    filtered = article_filter.filter_articles(target_count=12)
+    article_filter.save_filtered_articles(filtered)
+
+def load_filtered_articles():
+    try:
+        with open(filtered_articles_path,'r',encoding='utf-8') as f:
+            filtered_articles = json.load(f)
+
+    except FileNotFoundError as e:
+        return e
+    except JSONDecodeError:
+        summarize_logger.error(f"Unable to decode JSON file: {filtered_articles_path}")
+    else:
+        summarize_logger.info(f"Loaded {len(filtered_articles.values())} filtered articles")
+        return filtered_articles
 
 client = Groq()
-def extract_news():
-    with open(fetcher_config, 'r') as f:
-        fetcher_configs = json.load(f)
-    with open(anchor_config, 'r') as f:
-        anchor_configs = json.load(f)
-
-    summarize_logger.info("Extracting latest weekly news from the sources")
-    gmail_configs = fetcher_configs.pop('gmail_sources')
-    latest_news = {}
-
-    # Getting latest news from rss and non-rss sources and categorizing them
-    feed_fetcher = FeedFetcher(fetcher_configs)
-    feed = feed_fetcher.extract_feed()
-    categorizer = ArticleCategorizer(anchor_configs,feed)
-    final_feed = categorizer.select_articles()
-    latest_news.update(final_feed)
-
-    # Getting newsletters
-    gmail_news = []
-    for _,email in gmail_configs.items():
-        e_mail_news = GmailFetcher().fetch(email)
-        gmail_news.extend(e_mail_news)
-    if gmail_news:
-        latest_news.update({'newsletter':gmail_news})
-
-    #Creating a Json
-    with open(news_path, 'w') as f:
-        json.dump(latest_news,f)
-        summarize_logger.info("All the weekly news are stored in 'latest_news.json'")
-    return latest_news
-
 def summarize_with_retry(content,category):
     system_prompt = f"""You are StackFeed, an AI digest assistant for a Discord community 
     of AI engineering learners and enthusiasts.
@@ -88,18 +74,19 @@ def summarize_with_retry(content,category):
     return run_groq_with_retry(make_call)
 
 
-def summarize(refresh:bool = False, news_path = news_path):
-
+def summarize(refresh:bool = False):
     if refresh:
-        latest_news = extract_news()
-    else:
-        with open(news_path,'r') as f:
-            latest_news = json.load(f)
+        fetch_and_filter()
+        result = load_filtered_articles()
 
-    summarize_logger.info("Latest weekly news are loaded for summarization")
+    else:
+        result = load_filtered_articles()
+        if isinstance(result, FileNotFoundError):
+            fetch_and_filter()
+            result = load_filtered_articles()
 
     summarized_news = {}
-    for category, articles in latest_news.items():
+    for category, articles in result.items():
         summarized_news[category] = []
         for article in articles:
             summary = summarize_with_retry(article['content'],category)
@@ -114,7 +101,7 @@ def summarize(refresh:bool = False, news_path = news_path):
     return summarized_news
 
 if __name__ == '__main__':
-    summarized_news = summarize(refresh=True)
+    summarized_news = summarize(refresh=False)
     for category, articles in summarized_news.items():
         print(f"-----Category: {category}-------")
         for article in articles:
