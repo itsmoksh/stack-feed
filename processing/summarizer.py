@@ -1,4 +1,5 @@
 import json
+import textwrap
 from json import JSONDecodeError
 from dotenv import load_dotenv
 from logging_setup import setup_logger
@@ -15,6 +16,8 @@ filtered_articles_path = Path(__file__).resolve().parent.parent / 'filtered_arti
 
 # Setting up the summarizer logger
 summarize_logger = setup_logger('summarize_logger')
+MAX_SUMMARY_INPUT_CHARS = 6000
+MAX_SUMMARY_REDUCTION_ROUNDS = 6
 
 #Filtering articles
 def fetch_and_filter():
@@ -37,17 +40,60 @@ def load_filtered_articles():
         return filtered_articles
 
 client = Groq()
-def summarize_with_retry(content,category):
+
+
+def _summarize_text_with_retry(content: str, category: str) -> str:
     system_prompt = article_summary_prompt(category)
+
     def make_call():
         completion = client.chat.completions.create(
             model="openai/gpt-oss-120b",
             messages=[
                 {'role': 'system', 'content': system_prompt},
                 {"role": 'user', 'content': content}],
+            max_completion_tokens=512,
         )
         return completion.choices[0].message.content
+
     return run_groq_with_retry(make_call)
+
+
+def _split_summary_input(content: str) -> list[str]:
+    """Split text into conservative character-bounded pieces for Groq requests."""
+    chunks = textwrap.wrap(
+        content,
+        width=MAX_SUMMARY_INPUT_CHARS,
+        break_long_words=True,
+        break_on_hyphens=False,
+    )
+    return chunks or ['']
+
+
+def summarize_with_retry(content, category):
+    """Summarize long articles in bounded pieces, then combine the notes."""
+    chunks = _split_summary_input(content)
+    if len(chunks) == 1:
+        return _summarize_text_with_retry(chunks[0], category)
+
+    summarize_logger.info(
+        'Summarizing long article in bounded pieces category=%s content_chars=%d initial_chunks=%d',
+        category,
+        len(content),
+        len(chunks),
+    )
+    for _ in range(MAX_SUMMARY_REDUCTION_ROUNDS):
+        partial_summaries = [
+            _summarize_text_with_retry(chunk, category)
+            for chunk in chunks
+        ]
+        chunks = _split_summary_input('\n\n'.join(partial_summaries))
+        if len(chunks) == 1:
+            return _summarize_text_with_retry(chunks[0], category)
+
+    raise RuntimeError(
+        'Could not reduce the article summary to one Groq request within '
+        f'{MAX_SUMMARY_REDUCTION_ROUNDS} passes.'
+    )
 
 
 async def summarize(refresh: bool = True):

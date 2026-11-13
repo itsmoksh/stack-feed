@@ -6,7 +6,6 @@ import logging
 from typing import Any
 
 from dotenv import load_dotenv
-from pyasn1.type.univ import Null
 from typesafe_sdk import Choice, TypeSafeClient
 
 from logging_setup import setup_logger
@@ -83,7 +82,7 @@ def router_node(state: RAGState) -> dict[str, Any]:
 
     type_answer = response.choices.get('question_type')
     question_type = type_answer.choice if type_answer else None
-    if question_type in ['none',Null]:
+    if question_type == 'none':
         question_type = None
 
     retrieval_logger.info(
@@ -126,7 +125,7 @@ def category_node(state: RAGState) -> dict[str, Any]:
     category = category_answer.choice if category_answer else None
     scope_answer = response.choices.get('category_scope')
     category_scope = scope_answer.choice if scope_answer else None
-    if category in ['none', Null]:
+    if category == 'none':
         category = None
     if category_scope not in ['broad', 'focused']:
         category_scope = 'focused'

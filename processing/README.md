@@ -59,7 +59,10 @@ preserve benchmark rows, model names, labels, values, and markers. A table
 preprocessing failure raises an error and prevents the filtered JSON from being
 written, so a partial processed set is not saved.
 
-`summarizer.py` summarizes each article into three to five bullets. The root
+`summarizer.py` summarizes each article into three to five bullets. Long article
+text is split into bounded pieces, summarized in passes, and combined so a single
+request does not exceed the configured input size. Groq rate-limit responses are
+retried by the shared helper. The root
 `prompts.py` contains the article relevance, summary, and table-reformatting
 prompts. Summaries are generated per article and returned grouped by category to
 the Discord bot.
