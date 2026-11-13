@@ -11,6 +11,7 @@ dependencies = [
     "groq>=0.30.0,<1.0.0",
     "langgraph>=1.0.0",
     "python-dotenv>=1.2.2",
+    "pyasn1>=0.6.1",
     "qdrant-client>=1.17.1",
     "sentence-transformers>=5.4.1",
     "typesafe-sdk>=0.7.5",
