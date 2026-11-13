@@ -1,84 +1,105 @@
-# RAG Component - Stack Feed
+# RAG Workflow
 
-The RAG (Retrieval Augmented Generation) Pipeline is an intelligent Q&A system of Stack Feed designed to ask questions about the weekly AI news digest and receive accurate, grounded answers using a hybrid semantic search and a Large language model.
+The RAG package answers questions about the articles indexed for the latest
+digest. It uses LangGraph to route questions, Qdrant for hybrid retrieval, and a
+Groq-hosted chat model to write grounded answers.
 
-### How it works:
-- Loads the categorized raw articles and newsletters from `latest_news.json`, preserving each item's processing category as Qdrant metadata.
-- Chunk the article contents using Chonkie based on semantic similarity.
-- Ingest these chunks into the Qdrant database as a dense embedding(all-MiniLM-L6-v2) and a sparse embedding(BM25). 
-- Find the top 3 article chunks based on the similarity with the user query(hybrid search). 
-- Generate structure and human-readable output using the Groq openai/gpt-oss-20b model.
-- The system evaluates the RAG pipeline using three semantic evaluation categories powered by an LLM-as-a-judge approach.
+## Workflow
 
-**1. Retrieval Quality**:
-Evaluates whether the retrieved context contains sufficient information to answer the user query, and categorizes into:
-- HIGH
-- MEDIUM
-- LOW 
+`build_graph()` in `workflow.py` builds the graph. The Discord bot uses its
+streaming generator; evaluation code uses the same graph with a regular
+generator.
 
-Tracks: Queries where the retrieval context was insufficient.
-
-**2. Grounding Quality (Faithfulness)**:
-Evaluates whether the generated response is supported by the retrieved context, and categorizes into:
-- SUPPORTED
-- PARTIALLY SUPPORTED
-- UNSUPPORTED
-
-Tracks: Queries where responses may contain hallucinated or unsupported information.
-
-**3. Answer Quality (Response Relevance)**:
-Evaluates whether the generated response appropriately answers the user query, and categorizes into:
-- RELEVANT
-- PARTIALLY RELEVANT
-- IRRELEVANT
-
-Tracks: Queries where responses were incomplete, vague, or off-topic.
-
-## Architecture
 ```mermaid
 flowchart TD
-    subgraph IDX["Indexing"]
-        A[Articles JSON] --> B[Chonkie<br/>Chunk articles]
-        B --> C[Dense embedding<br/>all-MiniLM-L6-v2]
-        B --> D[Sparse vector<br/>BM25]
-        C --> E[(Qdrant<br/>Dense + sparse index)]
-        D --> E
-    end
-
-    subgraph QA["Question answering"]
-        U[User question<br/>Discord chat] --> Q1[Dense query embedding]
-        U --> Q2[Sparse query vector<br/>BM25]
-        Q1 --> R[Hybrid search<br/>RRF fusion]
-        Q2 --> R
-        E --> R
-        R --> S[Top-k retrieved chunks]
-        S --> T[Groq LLM<br/>Grounded answer]
-        U --> T
-        T --> V[Answer posted<br/>in Discord]
-    end
-
-    subgraph EV["Evaluation"]
-        S --> W[LLM judge<br/>Groundedness, answer relevance,<br/>context relevance]
-        T --> W
-        W --> X[Evaluation metrics]
-    end
-
-    classDef store stroke:#f59e0b,stroke-width:2px
-    classDef llm stroke:#10b981,stroke-width:2px
-    classDef user stroke:#3b82f6,stroke-width:2px
-    class A,E,S store
-    class T,W llm
-    class U,V user****
+    A[Question] --> B[TypeSafe: classify answer shape]
+    B -->|Single fact| C[Hybrid retrieval]
+    B -->|Comparison| D[Split into focused queries]
+    B -->|Multi-article synthesis| C
+    B -->|Category-scoped| E[TypeSafe: identify category and scope]
+    E -->|Broad| F[Scroll category chunks: first two per article]
+    E -->|Focused| C
+    D --> C
+    C -->|Single fact| I[Groq: generate grounded answer]
+    C -->|Multi-article or focused category| G[Review evidence gaps]
+    G -->|Missing evidence and rounds remain| C
+    G -->|Complete or stopped| H[Combine evidence]
+    F --> H
+    C -->|Comparison searches complete| H
+    H --> I
+    I --> J[Discord or evaluation result]
 ```
 
-## RAG Requirements:
-You need to create a cluster on the Qdrant vector database
-- Create an API and URL for that cluster 
-- To prevent limit, also create a Hugging Face token
-- Store it in a .env file present in the project root
-```text
-    QDRANT_URL=your_qdrant_cloud_url
-    QDRANT_API_KEY=your_qdrant_api_key
-    HF_TOKEN=your_huggingface_token
-    GROQ_API_KEY=your_groq_api_key
+### Routing and retrieval
+
+- **Single fact:** searches Qdrant with the original question.
+- **Comparison:** decomposes the question into at most five focused searches,
+  then combines unique results.
+- **Multi-article:** searches broadly and can run up to three evidence-gap
+  follow-up rounds.
+- **Category-scoped:** TypeSafe selects one digest category and a `broad` or
+  `focused` scope. Broad questions scroll all chunks for that category and keep
+  the first two chunks per article. Focused questions use hybrid search with a
+  category filter and bounded evidence-gap follow-ups.
+
+Hybrid search uses Qdrant's dense and sparse prefetches, fused with reciprocal
+rank fusion. Follow-up searches stop when there are no new chunks, the evidence
+review finds enough support, or the configured round limit is reached.
+
+The generator is instructed to use retrieved article evidence only. When no
+evidence is available, it returns the configured abstention answer. Article
+text is treated as source data, not as instructions.
+
+## Qdrant collection
+
+`vector_store.py` stores chunks in the `weekly_digest_structured` collection.
+`StructureAwareChunker` splits articles on Markdown section headers, splits
+large sections further, and drops near-empty fragments. It adds the article
+title and category to the text used for embeddings, while storing the original
+chunk text and article metadata in the payload.
+
+The collection uses Qdrant cloud inference with the
+`sentence-transformers/all-MiniLM-L6-v2` dense model and Qdrant BM25 sparse
+vectors. The `category` payload is indexed for filtered search.
+
+Calling `ingest_digest(refresh=True)` deletes and recreates this collection
+before uploading chunks from the root `filtered_articles.json`. The Discord bot
+does this after publishing each digest. The evaluation suite only queries the
+existing collection; it does not ingest or change data.
+
+## Run and evaluate
+
+For a local graph call, configure `GROQ_API_KEY`, `TYPESAFE_API_KEY`,
+`QDRANT_URL`, and `QDRANT_API_KEY`, then use:
+
+```python
+from rag.workflow import build_graph
+
+graph = build_graph()
+result = graph.invoke({"question": "What research papers were in this week's digest?"})
+print(result["answer"])
 ```
+
+The Discord bot configures streaming with `build_graph(stream_generator=True)`.
+The evaluation suite can be run from the project root with:
+
+```bash
+uv run python evals/run_suite.py
+```
+
+The suite runs the golden dataset through this graph and writes a timestamped
+JSON report under `evals/results/`. It can also publish per-question feedback to
+LangSmith when `LANGSMITH_API_KEY` is configured.
+
+## Module map
+
+- `workflow.py`: LangGraph assembly and conditional routing.
+- `state.py`: shared `RAGState` fields.
+- `retriever.py`: TypeSafe routing, query decomposition, retrieval, evidence-gap
+  review, and evidence combination.
+- `hybrid_search.py`: dense and sparse Qdrant search and rank fusion.
+- `category_search.py`: category scroll and per-article chunk selection.
+- `chunking.py`: section-aware article chunking.
+- `vector_store.py`: collection setup, ingestion, and chunk payloads.
+- `generator.py`: grounded answer generation and streaming.
+- `prompts.py`: routing, retrieval, and answer prompt builders.

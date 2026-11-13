@@ -15,8 +15,8 @@ QUERIES = [
  
 def fetch_exa_articles():
     articles = []
-    since = (datetime.now(timezone.utc) - timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
-    end = (datetime.now(timezone.utc)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    end_time = datetime.now(timezone.utc)
+    since, end = (end_time - timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ"), end_time.strftime("%Y-%m-%dT%H:%M:%SZ")
     for q in QUERIES:
         try:
             result = exa.search(

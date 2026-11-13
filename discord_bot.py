@@ -1,23 +1,27 @@
 import discord
 from discord.ext import commands
 from processing.summarizer import summarize
-from rag.hybrid_rag import ingest_digest
-from rag.rag_eval import EvalRag
+from rag.vector_store import ingest_digest
+from rag.workflow import build_graph
 from dotenv import load_dotenv
 from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta
-from pathlib import Path
 from logging_setup import setup_logger
 import os
 import asyncio
 load_dotenv()
 
-log_path = Path(__file__).parent / 'stack_feed.log'
-bot_logger = setup_logger('bot_logger', log_path)
+bot_logger = setup_logger('bot_logger')
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 DIGEST_CHANNEL_ID = int(os.getenv("DIGEST_CHANNEL_ID"))
-METRICS_CHANNEL_ID = int(os.getenv("METRICS_CHANNEL_ID"))
+
+CATEGORY_COLORS = {
+    "model release": 0x5865F2,  # Blurple
+    "product/tooling": 0xEB459E, # Gold
+    "safety": 0xED4245,         # Red
+    "research": 0x2ECC71        # Green
+}
 
 QNA_HOURS = 2
 TIME_ZONE = ZoneInfo("Asia/Kolkata")
@@ -31,6 +35,7 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 DISCORD_MESSAGE_LIMIT = 2000   # Discord's fixed cap on bot message content
+rag_graph = build_graph(stream_generator=True)
 
 def qna_window_is_open():
     return qna_window_end is not None and datetime.now(TIME_ZONE) < qna_window_end
@@ -42,108 +47,70 @@ async def get_digest_channel():
         channel = await bot.fetch_channel(DIGEST_CHANNEL_ID)
     return channel
 
-async def get_metrics_channel():
-    channel = bot.get_channel(METRICS_CHANNEL_ID)
-    if channel is None:
-        channel = await bot.fetch_channel(METRICS_CHANNEL_ID)
-    return channel
-
 # Sends the weekly digest
 async def send_digest():
     global qna_window_end
+    digest_window_end = datetime.now(TIME_ZONE)
+    digest_window_start = digest_window_end - timedelta(days=7)
     channel = await get_digest_channel()
 
-    await channel.send(f"Preparing this week's AI Digest..")
-    summarized_news = await asyncio.to_thread(summarize,refresh=True)
-    sorted_news = dict(sorted(summarized_news.items()))
+    status_msg = await channel.send("Preparing this week's AI Digest..")
+    story_count = 0
+    category_count = 0
+    async for category, summarized_articles in summarize(refresh=True):
+        story_count += len(summarized_articles)
+        category_count += 1
+        category_title = f"{category.title()} updates"
+        embed_color = CATEGORY_COLORS.get(category.lower().strip(), 0x7F8C8D)
+
+        lines = []
+        for idx, article in enumerate(summarized_articles, start=1):
+            title = article.get('title', 'No Title')
+            url = article.get('url')
+            if url:
+                lines.append(f"**{idx}.** [{title}]({url})")
+            else:
+                lines.append(f"**{idx}.** {title}")
+
+        description = "\n\n".join(lines)
+
+        embed = discord.Embed(
+            title=category_title,
+            description=description,
+            color= CATEGORY_COLORS.get(category,0x7F8C8D)
+        )
+        embed.set_footer(text=f"{len(summarized_articles)} articles · full summaries in the thread")
+        root_msg = await channel.send(embed=embed)
+        category_thread =  await root_msg.create_thread(name = f"Summarized articles of {category}" )
+
+        for idx, article in enumerate(summarized_articles, start=1):
+            description = article['summary']
+            if len(description) > 4096:
+                description = description[:4093] + "..."
+            summary_embed = discord.Embed(
+                title=f"{idx}. {article['title']}",
+                description=description,
+                color=embed_color,
+                url=article['source']
+            )
+            await category_thread.send(embed = summary_embed)
+
+        await category_thread.edit(locked = True)
+
+    date_range = (
+        f"{digest_window_start:%d %b %Y} to {digest_window_end:%d %b %Y}"
+    )
+    await status_msg.edit(
+        content=(
+            f"AI Digest · 7-day window: {date_range} — "
+            f"{story_count} stories across {category_count} categories"
+        )
+    )
     await asyncio.to_thread(ingest_digest, refresh=True)
-    article_count = 0
-    for category, articles in sorted_news.items():
-
-        if category == 'General':
-            await channel.send(f"**General/Overall updates this week**")
-        elif category == 'newsletter':
-            await channel.send(f"**Published Newsletters this week**")
-        else:
-            await channel.send(f"**{category.title()} updates**")
-
-        for idx, article in enumerate(articles, start=1):
-            article_count += 1
-            try:
-                description = article['summary']
-                if len(description) > 4096:
-                    description = description[:4093] + "..."
-                embed = discord.Embed(
-                    title=f"{idx}. {article['title']}",
-                    description=description,
-                    color=0x5865F2
-                )
-                embed.set_footer(text=f"Source: {article['source']}")
-
-                await channel.send(embed = embed)
-            except Exception as e:
-                bot_logger.error(f"Failed to post article '{article.get('title')}': {e}")
-    if article_count == 0:
-        await channel.send("No AI news found for this week.")
-
     qna_window_end = datetime.now(TIME_ZONE) + timedelta(hours=QNA_HOURS)
     await channel.send(
-        f"**\nQ&A is now open for the next {QNA_HOURS} hour(s). Ask question in this channel and I will answer you inside a thread.**"
+        f"**Ask your questions here in the channel. Q&A is open for {QNA_HOURS} hours.**"
     )
-
-# Build the evaluation metrics after QnA
-def build_metrics_embed():
-    summary = EvalRag.summary()
-    total_queries = max(summary['total_queries'], 1)
-    context_relevance_distribution = summary['context_relevance_distribution']
-    ground_ness_distribution = summary['ground_ness_distribution']
-    answer_relevance_distribution = summary['answer_relevance_distribution']
-    low_cr_queries = summary['low_cr_queries']
-    low_gr_queries = summary['low_gr_queries']
-    low_ar_queries = summary['low_ar_queries']
-
-    embed = discord.Embed(
-        title="RAG Evaluation Summary (Stack Feed)",
-        description="RAG metrics for the latest bot run.",
-        color=0x2ECC71,
-        timestamp=datetime.now(TIME_ZONE)
-    )
-    embed.add_field(name="Total Questions", value=str(summary['total_queries']), inline=True)
-    embed.add_field(name="Avg Latency", value=f"{summary['average_total_latency']:.2f} sec", inline=True)
-
-    if context_relevance_distribution:
-        embed.add_field(name= 'Context Relevance Distribution', value = "\n".join(
-            [f"{category.title()}: {round((query_count*100)/total_queries)}%" for category,query_count in context_relevance_distribution.items()]),
-                        inline = False)
-
-    if ground_ness_distribution:
-        embed.add_field(name = 'Groundedness Distribution', value = "\n".join(
-            [f"{category.title()}: {round((query_count * 100) /total_queries)}%" for category, query_count
-             in ground_ness_distribution.items()]),
-                        inline = False)
-
-    if answer_relevance_distribution:
-        embed.add_field(name= 'Answer Relevance Distribution', value = "\n".join(
-            [f"{category.title()}: {round((query_count * 100) /total_queries)}%" for category, query_count
-             in answer_relevance_distribution.items()]),
-                        inline = False)
-
-    if low_cr_queries:
-        embed.add_field(name = 'Low Context Relevance Queries',
-                        value= "\n".join(low_cr_queries)[:1024],
-                        inline = False)
-
-    if low_gr_queries:
-        embed.add_field(name = 'Unsupported Groundedness Queries',
-                       value= "\n".join(low_gr_queries)[:1024],
-                       inline = False)
-
-    if low_ar_queries:
-        embed.add_field(name = 'Irrelevant Answer Queries',
-                        value = "\n".join(low_ar_queries)[:1024],
-                        inline = False)
-
-    return embed
 
 def split_message(text, limit=DISCORD_MESSAGE_LIMIT):
     """
@@ -182,16 +149,103 @@ def split_message(text, limit=DISCORD_MESSAGE_LIMIT):
 
     return chunks
 
+
+def _stream_chunk_text(message_chunk):
+    """Extract text from a streamed LangChain message chunk."""
+    content = getattr(message_chunk, 'content', '')
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        return ''.join(
+            block.get('text', '') if isinstance(block, dict) else str(block)
+            for block in content
+        )
+    return ''
+
+
+async def _update_answer_messages(thread, status_message, answer, messages, displayed):
+    """Edit the live Discord messages to reflect the latest streamed answer."""
+    parts = split_message(answer)
+    for index, part in enumerate(parts):
+        message = status_message if index == 0 else messages.get(index)
+        if message is None:
+            message = await thread.send(part)
+            messages[index] = message
+        elif displayed.get(index) != part:
+            await message.edit(content=part)
+        displayed[index] = part
+
+
 async def answer_in_thread(thread, question):
+    status_message = await thread.send('Routing your question and searching the articles…')
+    answer = ''
+    final_answer = ''
+    messages = {}
+    displayed = {0: 'Routing your question and searching the articles…'}
+    last_update_text = displayed[0]
+    last_flush = asyncio.get_running_loop().time()
+
     try:
-        eval_result = await asyncio.to_thread(EvalRag,question)
-        for chunk in split_message(eval_result.response):
-            await thread.send(chunk)
-        await thread.send(f"Sources: {eval_result.sources}")
-        await asyncio.to_thread(eval_result.generate_report)
+        async for event in rag_graph.astream(
+            {'question': question},
+            stream_mode=['messages', 'updates'],
+            version='v2',
+        ):
+            if event['type'] == 'updates':
+                updates = event['data']
+                if 'generator' in updates and isinstance(updates['generator'], dict):
+                    final_answer = updates['generator'].get('answer') or final_answer
+
+                progress_by_node = {
+                    'router': 'Question routed; searching the articles…',
+                    'category': 'Category identified; searching its articles…',
+                    'decomposer': 'Breaking the comparison into focused searches…',
+                    'retriever': 'Retrieving relevant article evidence…',
+                    'evidence_gap': 'Checking evidence and searching for missing details…',
+                    'category_scroll': 'Collecting the articles in this category…',
+                    'combine_evidence': 'Evidence gathered; preparing your answer…',
+                }
+                if not answer:
+                    for node_name, progress_text in progress_by_node.items():
+                        if node_name in updates and progress_text != last_update_text:
+                            await status_message.edit(content=progress_text)
+                            last_update_text = progress_text
+
+            elif event['type'] == 'messages':
+                message_chunk, metadata = event['data']
+                if metadata.get('langgraph_node') != 'generator':
+                    continue
+
+                answer += _stream_chunk_text(message_chunk)
+                now = asyncio.get_running_loop().time()
+                if answer and now - last_flush >= 0.75:
+                    await _update_answer_messages(
+                        thread,
+                        status_message,
+                        answer,
+                        messages,
+                        displayed,
+                    )
+                    last_flush = now
+
+        final_answer = final_answer or answer
+        if final_answer:
+            await _update_answer_messages(
+                thread,
+                status_message,
+                final_answer,
+                messages,
+                displayed,
+            )
+        elif not answer:
+            await status_message.edit(content='I could not generate an answer for that question.')
     except Exception as e:
-        bot_logger.error(f"Failed to answer question '{question}': {e}")
-        await thread.send("Sorry, something went wrong while answering that. Please try asking again in a moment.")
+        bot_logger.exception('Failed to answer question %r: %s', question, e)
+        error_text = 'Sorry, something went wrong while answering that. Please try asking again in a moment.'
+        if answer:
+            await thread.send(error_text)
+        else:
+            await status_message.edit(content=error_text)
 
 async def close_all_qna_threads():
     for thread_id in qna_thread_ids:
@@ -208,14 +262,14 @@ async def close_all_qna_threads():
             await thread.edit(archived=True, locked=True)
 
 async def close_bot_after_qna_window():
+    if qna_window_end is None:
+        return
     remaining_seconds = (qna_window_end - datetime.now(TIME_ZONE)).total_seconds()
     if remaining_seconds > 0:
         await asyncio.sleep(remaining_seconds)
 
     digest_channel = await get_digest_channel()
-    metrics_channel = await get_metrics_channel()
     await digest_channel.send("This week's Q&A window is now closed. See you next Sunday.")
-    await metrics_channel.send(embed=build_metrics_embed())
     await close_all_qna_threads()
     await bot.close()
 

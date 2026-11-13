@@ -1,0 +1,557 @@
+{
+  "week": "2026-10-28 to 2026-11-04",
+  "frozen_articles": [
+    {
+      "id": "longcat-2.5",
+      "title": "Introducing LongCat-2.5",
+      "category": "model release",
+      "url": "https://longcat.ai/blog/longcat-2.5/"
+    },
+    {
+      "id": "dory1.0-4b",
+      "title": "Researchers release Dory1.0-4B, a 4B-parameter looped model with 256K-token context",
+      "category": "model release",
+      "url": "https://digestai.news/story/researchers-release-dory1-0-4b-a-4b-parameter-looped-model-with-256k-t"
+    },
+    {
+      "id": "tencent-hy4",
+      "title": "Tencent Launches Hy4",
+      "category": "model release",
+      "url": "https://www.tencent.com/tencent-launches-hy4-joining-the-ranks-of-the-worlds-leading-open-source-ai-models/"
+    },
+    {
+      "id": "gemini-4-carbon",
+      "title": "Gemini 4 Carbon: our next frontier model",
+      "category": "model release",
+      "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-carbon/"
+    },
+    {
+      "id": "anthropic-message-threads",
+      "title": "Anthropic rolls out Message Threads in public beta",
+      "category": "product/tooling",
+      "url": "https://www.indiatoday.in/technology/news/story/anthropic-rolls-out-message-threads-in-public-beta-to-make-claude-ai-much-faster-3031855-2026-11-04"
+    },
+    {
+      "id": "openai-probes",
+      "title": "Training activation classifiers for safety and alignment",
+      "category": "safety",
+      "url": "https://alignment.openai.com/training-activation-classifiers/"
+    },
+    {
+      "id": "hf-agent-security",
+      "title": "Why Agent Security Must Inspect Actions, Not Just Prompts",
+      "category": "safety",
+      "url": "https://huggingface.blog/blog/final-bench-the-sleeper-in-the-weights-we-planted-a-backdoor-i/"
+    },
+    {
+      "id": "coworkos",
+      "title": "Renmin's CoworkOS Harness Lifts Qwen3.6 From 33.19 to 42.95",
+      "category": "research",
+      "url": "https://aiweekly.co/alerts/renmins-coworkos-harness-lifts-qwen36-from-3319-to-4295"
+    },
+    {
+      "id": "specpilot",
+      "title": "SpecPilot Lifts Speculative-Decoding Speedup to 10.87x From 4.46x",
+      "category": "research",
+      "url": "https://aiweekly.co/alerts/specpilot-lifts-speculative-decoding-speedup-to-1087-from-446"
+    },
+    {
+      "id": "statebench",
+      "title": "StateBench: Testing how language models track state changes over long documents",
+      "category": "research",
+      "url": "https://allenai.org/blog/statebench"
+    },
+    {
+      "id": "rea-runtime",
+      "title": "REA Runtime Splits Robot Agents Into Brain and Cerebellum",
+      "category": "research",
+      "url": "https://emergent.sh/news/rea-runtime-splits-robot-agents-into-brain"
+    },
+    {
+      "id": "northcua",
+      "title": "NorthCUA Pro 397B Tops Qwen3.8-Max, Kimi-K3 on OSWorld-Verified",
+      "category": "research",
+      "url": "https://aiweekly.co/alerts/northcua-pro-397b-tops-qwen38-max-kimi-k3-on-osworld-verified"
+    }
+  ],
+  "questions": [
+    {
+      "id": "q01",
+      "question": "How many total parameters does LongCat-2.5 have, and how many are activated per token?",
+      "type": "single_fact",
+      "required_urls": [
+        "https://longcat.ai/blog/longcat-2.5/"
+      ],
+      "expected_answer": "1.6 trillion total parameters, with approximately 48 billion activated per token.",
+      "evidence": "Stated directly in the opening paragraph of the LongCat-2.5 post."
+    },
+    {
+      "id": "q02",
+      "question": "By what percentage did the FSDP configuration improve per-device throughput over the DDP baseline in LongCat-2.5's long-sequence SFT training?",
+      "type": "comparison",
+      "required_urls": [
+        "https://longcat.ai/blog/longcat-2.5/"
+      ],
+      "expected_answer": "86% higher per-device throughput than the DDP baseline.",
+      "evidence": "Stated in the 'FSDP and System Optimizations' section."
+    },
+    {
+      "id": "q03",
+      "question": "How much did Hy4 reduce its hallucination rate compared to Hy4 Preview?",
+      "type": "comparison",
+      "required_urls": [
+        "https://www.tencent.com/tencent-launches-hy4-joining-the-ranks-of-the-worlds-leading-open-source-ai-models/"
+      ],
+      "expected_answer": "From 12.95% (Hy4 Preview) to 7.2% (Hy4).",
+      "evidence": "Stated in the financial search-optimization paragraph."
+    },
+    {
+      "id": "q04",
+      "question": "What is Hy4's API pricing per million input and output tokens?",
+      "type": "single_fact",
+      "required_urls": [
+        "https://www.tencent.com/tencent-launches-hy4-joining-the-ranks-of-the-worlds-leading-open-source-ai-models/"
+      ],
+      "expected_answer": "About $0.90 per million input tokens and $2.70 per million output tokens (cached input $0.045 per million).",
+      "evidence": "Stated in the 'Delivering Greater Cost Performance' section."
+    },
+    {
+      "id": "q05",
+      "question": "How many financial professionals took part in the blind evaluation of Hy4, and what was Hy4's score versus DeepSeek-V4.1-Flash-1017?",
+      "type": "comparison",
+      "required_urls": [
+        "https://www.tencent.com/tencent-launches-hy4-joining-the-ranks-of-the-worlds-leading-open-source-ai-models/"
+      ],
+      "expected_answer": "213 financial professionals; Hy4 scored 3.04 versus DeepSeek-V4.1-Flash-1017's 2.97.",
+      "evidence": "Stated in the financial-evaluation paragraph with the four model scores."
+    },
+    {
+      "id": "q06",
+      "question": "What are Gemini 4 Carbon's scores on SEC-bench Pro, ExploitGym, and CWE-bench?",
+      "type": "single_fact",
+      "required_urls": [
+        "https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-carbon/"
+      ],
+      "expected_answer": "SEC-bench Pro 88.2%, ExploitGym 54.8%, CWE-bench 71.0%.",
+      "evidence": "Stated in both the intro and the 'cybersecurity performance' section."
+    },
+    {
+      "id": "q07",
+      "question": "What is Gemini 4 Carbon's introductory price per million input/output tokens, and what will it rise to after the introductory period?",
+      "type": "single_fact",
+      "required_urls": [
+        "https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-carbon/"
+      ],
+      "expected_answer": "Introductory: $2/1M input, $10/1M output (cached input 95% off). After the introductory period: $4/1M input, $20/1M output.",
+      "evidence": "Pricing is split between the intro paragraph and the final paragraph of the post."
+    },
+    {
+      "id": "q08",
+      "question": "By how much did Gemini 4 Carbon reduce overreach and under-service compared to its predecessor?",
+      "type": "comparison",
+      "required_urls": [
+        "https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-carbon/"
+      ],
+      "expected_answer": "Overreach reduced by 26% and under-service by 29%.",
+      "evidence": "Stated in the 'Following through without overstepping' bullet."
+    },
+    {
+      "id": "q10",
+      "question": "What token-efficiency gain does Dory1.0-4B's looped inference give on agentic tasks?",
+      "type": "single_fact",
+      "required_urls": [
+        "https://digestai.news/story/researchers-release-dory1-0-4b-a-4b-parameter-looped-model-with-256k-t"
+      ],
+      "expected_answer": "Reduces output tokens by 1.3x to 2.5x on agentic tasks.",
+      "evidence": "Stated in the key points and body of the Dory1.0-4B article."
+    },
+    {
+      "id": "q11",
+      "question": "By what percentage does Anthropic's Message Threads cut time-to-first-token, and for what request sizes?",
+      "type": "single_fact",
+      "required_urls": [
+        "https://www.indiatoday.in/technology/news/story/anthropic-rolls-out-message-threads-in-public-beta-to-make-claude-ai-much-faster-3031855-2026-11-04"
+      ],
+      "expected_answer": "Roughly 35% for requests of 500,000 to 1 million tokens.",
+      "evidence": "Stated in the 'How Message Threads work' section."
+    },
+    {
+      "id": "q13",
+      "question": "Which account types are not eligible to use Message Threads?",
+      "type": "single_fact",
+      "required_urls": [
+        "https://www.indiatoday.in/technology/news/story/anthropic-rolls-out-message-threads-in-public-beta-to-make-claude-ai-much-faster-3031855-2026-11-04"
+      ],
+      "expected_answer": "Accounts using strict Zero Data Retention (ZDR) policies or requiring HIPAA compliance.",
+      "evidence": "Stated as the closing line of the article."
+    },
+    {
+      "id": "q14",
+      "question": "What architecture do OpenAI's safety probes use, and how do they aggregate per-token scores during training?",
+      "type": "single_fact",
+      "required_urls": [
+        "https://alignment.openai.com/training-activation-classifiers/"
+      ],
+      "expected_answer": "An MLP + QV-attention (Attention probe) architecture with an exponential moving average; training uses softmax aggregation of prefix scores rather than hard max.",
+      "evidence": "Stated in the 'Architecture' and 'Rolling softmax objective' sections."
+    },
+    {
+      "id": "q16",
+      "question": "In the Hugging Face backdoor demo, how many malicious payloads were proposed and how many benign commands were falsely denied?",
+      "type": "single_fact",
+      "required_urls": [
+        "https://huggingface.blog/blog/final-bench-the-sleeper-in-the-weights-we-planted-a-backdoor-i/"
+      ],
+      "expected_answer": "All 290 proposed payloads were denied; 81 other, benign commands were also denied.",
+      "evidence": "Stated in the 'Move the final decision to the action boundary' section."
+    },
+    {
+      "id": "q18",
+      "question": "By how much did CoworkOS's RSI-driven post-training lift Qwen3.6-35B-A3B's benchmark average, and over how many rounds?",
+      "type": "single_fact",
+      "required_urls": [
+        "https://aiweekly.co/alerts/renmins-coworkos-harness-lifts-qwen36-from-3319-to-4295"
+      ],
+      "expected_answer": "From 33.19 to 42.95 (a +9.76 gain) over five rounds.",
+      "evidence": "Stated in the TL;DR and body of the CoworkOS article."
+    },
+    {
+      "id": "q20",
+      "question": "What speculative-decoding speedup gains does SpecPilot report, with and without batching?",
+      "type": "comparison",
+      "required_urls": [
+        "https://aiweekly.co/alerts/specpilot-lifts-speculative-decoding-speedup-to-1087-from-446"
+      ],
+      "expected_answer": "From 4.46x to 10.87x for a single request, and from 1.94x to 3.93x with batching.",
+      "evidence": "Stated in the TL;DR and the body paragraph of the SpecPilot article."
+    },
+    {
+      "id": "q22",
+      "question": "What are the four difficulty levels defined in StateBench?",
+      "type": "single_fact",
+      "required_urls": [
+        "https://allenai.org/blog/statebench"
+      ],
+      "expected_answer": "R-trivial, aperiodic, soluble, and general finite.",
+      "evidence": "Listed and defined in the 'Four levels of state tracking' section."
+    },
+    {
+      "id": "q23",
+      "question": "On StateBench's hardest (general finite) problems, how low did frontier model accuracy fall as inputs grew longer?",
+      "type": "single_fact",
+      "required_urls": [
+        "https://allenai.org/blog/statebench"
+      ],
+      "expected_answer": "Accuracy dropped to 13% or lower on the longest general finite problems.",
+      "evidence": "Stated in the 'Frontier models' results section."
+    },
+    {
+      "id": "q24",
+      "question": "What success rate does the REA runtime achieve on LIBERO-Pro, and how much does it reduce control steps compared to single-agent baselines?",
+      "type": "comparison",
+      "required_urls": [
+        "https://emergent.sh/news/rea-runtime-splits-robot-agents-into-brain"
+      ],
+      "expected_answer": "95.9% success on LIBERO-Pro, using 25% fewer control steps than single-agent baselines.",
+      "evidence": "Stated in the TL;DR and opening paragraph of the REA article."
+    },
+    {
+      "id": "q25",
+      "question": "How did REA perform on the Unitree G1 humanoid walk-to-push task compared to the Agents SDK and ASPIRE baselines?",
+      "type": "comparison",
+      "required_urls": [
+        "https://emergent.sh/news/rea-runtime-splits-robot-agents-into-brain"
+      ],
+      "expected_answer": "REA scored 8 of 10 trials, versus 5 of 10 for Agents SDK and 2 of 10 for ASPIRE (p=0.023).",
+      "evidence": "Stated in the 'Benchmark Performance and Real Hardware Results' section."
+    },
+    {
+      "id": "q26",
+      "question": "What are the three model sizes NorthCUA released, and how many parameters does each have?",
+      "type": "single_fact",
+      "required_urls": [
+        "https://aiweekly.co/alerts/northcua-pro-397b-tops-qwen38-max-kimi-k3-on-osworld-verified"
+      ],
+      "expected_answer": "Nano (9B), Mini (35B), and Pro (397B).",
+      "evidence": "Stated in the TL;DR and the authors' description of the three model sizes."
+    },
+    {
+      "id": "q27",
+      "question": "How much training data (GUI interaction steps) did NorthCUA use, and how were the trajectories collected?",
+      "type": "single_fact",
+      "required_urls": [
+        "https://aiweekly.co/alerts/northcua-pro-397b-tops-qwen38-max-kimi-k3-on-osworld-verified"
+      ],
+      "expected_answer": "Over 4 million GUI interaction steps across dozens of applications, collected in isolated E2B sandboxes and filtered by outcome.",
+      "evidence": "Stated in the 'Training scale' paragraph."
+    },
+    {
+      "id": "q28",
+      "question": "Compare the parameter counts of Dory1.0-4B and LongCat-2.5. Which is larger, and by roughly what factor?",
+      "type": "comparison",
+      "required_urls": [
+        "https://digestai.news/story/researchers-release-dory1-0-4b-a-4b-parameter-looped-model-with-256k-t",
+        "https://longcat.ai/blog/longcat-2.5/"
+      ],
+      "expected_answer": "LongCat-2.5 (1.6 trillion total parameters) is far larger than Dory1.0-4B (4 billion parameters) -- roughly 400x more total parameters, though Dory is designed to rival larger models despite its small size.",
+      "evidence": "Parameter counts are each stated in their own article's opening paragraph; this question needs both to compute the comparison."
+    },
+    {
+      "id": "q29",
+      "question": "Compare Gemini 4 Carbon's and Tencent Hy4's approaches to cybersecurity safety. What benchmarks or safeguards does each cite?",
+      "type": "comparison",
+      "required_urls": [
+        "https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-carbon/",
+        "https://www.tencent.com/tencent-launches-hy4-joining-the-ranks-of-the-worlds-leading-open-source-ai-models/"
+      ],
+      "expected_answer": "Gemini 4 Carbon cites state-of-the-art scores on SEC-bench Pro (88.2%), ExploitGym (54.8%), and CWE-bench (71.0%), plus a multi-layered safety stack and prompt-injection resistance. Hy4 instead describes training safeguards (excluding offensive exploitation data) and assessments by Tencent's Xuanwu and Keen Security Labs, which found no significant offensive cybersecurity concerns, plus a reduced hallucination rate.",
+      "evidence": "Requires pulling the cybersecurity sections from both articles; neither mentions the other model."
+    },
+    {
+      "id": "q30",
+      "question": "The OpenAI probes article and the Hugging Face agent-security article both discuss runtime safety monitoring. How do their proposed approaches differ?",
+      "type": "comparison",
+      "required_urls": [
+        "https://alignment.openai.com/training-activation-classifiers/",
+        "https://huggingface.blog/blog/final-bench-the-sleeper-in-the-weights-we-planted-a-backdoor-i/"
+      ],
+      "expected_answer": "OpenAI's probes monitor a model's internal activations token-by-token to flag and interrupt policy-violating generations. The Hugging Face piece argues for a different layer entirely -- a pre-execution policy gate that evaluates the proposed action itself (not the model's internal state), independent of why the model proposed it.",
+      "evidence": "Each article's core proposal must be read; they do not cite each other."
+    },
+    {
+      "id": "q31",
+      "question": "Which articles this week reported a specific quantified performance or speed improvement (with before/after numbers)?",
+      "type": "multi_article",
+      "required_urls": [
+        "https://aiweekly.co/alerts/renmins-coworkos-harness-lifts-qwen36-from-3319-to-4295",
+        "https://aiweekly.co/alerts/specpilot-lifts-speculative-decoding-speedup-to-1087-from-446",
+        "https://emergent.sh/news/rea-runtime-splits-robot-agents-into-brain"
+      ],
+      "expected_answer": "CoworkOS (benchmark average 33.19 to 42.95), SpecPilot (speculative-decoding speedup 4.46x to 10.87x), and REA (95.9% success, 25% fewer control steps than baseline) all reported specific before/after or baseline-comparison numbers.",
+      "evidence": "Requires scanning all research-category articles for ones with explicit quantified gains; NorthCUA and StateBench report comparative rankings or accuracy drops rather than a single before/after improvement number."
+    },
+    {
+      "id": "q32",
+      "question": "Which model releases this week introduced visual or multimodal capabilities for the first time?",
+      "type": "category_scoped",
+      "required_urls": [
+        "https://longcat.ai/blog/longcat-2.5/",
+        "https://www.tencent.com/tencent-launches-hy4-joining-the-ranks-of-the-worlds-leading-open-source-ai-models/"
+      ],
+      "expected_answer": "LongCat-2.5 adds native multimodal visual understanding via multi-level discrete visual tokens, and Tencent Hy4 introduces visual understanding capabilities for the first time alongside computer-use capabilities. Gemini 4 Carbon and Dory1.0-4B are not described as newly multimodal in these articles.",
+      "evidence": "Requires checking each model-release article for whether multimodality is mentioned as new."
+    },
+    {
+      "id": "q33",
+      "question": "What were the model releases covered in this week's digest?",
+      "type": "category_scoped",
+      "required_urls": [
+        "https://longcat.ai/blog/longcat-2.5/",
+        "https://digestai.news/story/researchers-release-dory1-0-4b-a-4b-parameter-looped-model-with-256k-t",
+        "https://www.tencent.com/tencent-launches-hy4-joining-the-ranks-of-the-worlds-leading-open-source-ai-models/",
+        "https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-carbon/"
+      ],
+      "expected_answer": "LongCat-2.5, Dory1.0-4B, Tencent Hy4, and Gemini 4 Carbon.",
+      "evidence": "This is the full list of articles tagged 'model release' for the week."
+    },
+    {
+      "id": "q34",
+      "question": "What safety-related research or announcements appeared in this week's digest?",
+      "type": "category_scoped",
+      "required_urls": [
+        "https://alignment.openai.com/training-activation-classifiers/",
+        "https://huggingface.blog/blog/final-bench-the-sleeper-in-the-weights-we-planted-a-backdoor-i/"
+      ],
+      "expected_answer": "OpenAI's post on training activation classifiers (probes) for safety monitoring, and a Hugging Face piece on why agent security should inspect actions rather than just prompts, based on a backdoored-model demonstration.",
+      "evidence": "This is the full list of articles tagged 'safety' for the week."
+    },
+    {
+      "id": "q35",
+      "question": "Summarize the research papers in this week's digest and the institutions behind them.",
+      "type": "category_scoped",
+      "required_urls": [
+        "https://aiweekly.co/alerts/renmins-coworkos-harness-lifts-qwen36-from-3319-to-4295",
+        "https://aiweekly.co/alerts/specpilot-lifts-speculative-decoding-speedup-to-1087-from-446",
+        "https://allenai.org/blog/statebench",
+        "https://emergent.sh/news/rea-runtime-splits-robot-agents-into-brain",
+        "https://aiweekly.co/alerts/northcua-pro-397b-tops-qwen38-max-kimi-k3-on-osworld-verified"
+      ],
+      "expected_answer": "CoworkOS (Renmin University and collaborators) on an agent harness with self-improvement post-training; SpecPilot (UC Berkeley, Princeton, Stanford, NVIDIA) on speculative-decoding tuning; StateBench (Ai2) on long-context state tracking; REA (NUS, UC Berkeley, University of Tokyo) on a brain/cerebellum robot runtime; and NorthCUA (built on Qwen3.5) on open-source computer-use agents.",
+      "evidence": "This is the full list of articles tagged 'research' for the week."
+    },
+    {
+      "id": "q36",
+      "question": "What score did LongCat-2.5 achieve on StateBench's general finite state-tracking problems?",
+      "type": "unanswerable",
+      "required_urls": [],
+      "expected_answer": "Not covered. StateBench tested Gemini 3.8 Flash, Claude Opus 5.5, and GPT-6 Sol and Luna as its frontier models, plus several open pretrained models (Olmo 3, Olmo Hybrid, and smaller variants). LongCat-2.5 is not among the models evaluated in this article.",
+      "evidence": "The StateBench article names the specific models it tested, and LongCat-2.5 is not one of them."
+    },
+    {
+      "id": "q37",
+      "question": "On what exact date will Gemini 4 Carbon become available to ordinary developers and consumers?",
+      "type": "unanswerable",
+      "required_urls": [],
+      "expected_answer": "Not covered. The article says access will roll out gradually to cyber defenders and trusted partners first, and that Google is working to bring Carbon to developers, businesses, and consumers 'as soon as possible,' but no specific date is given.",
+      "evidence": "The 'Coming soon to developers, businesses, and consumers' section gives no fixed date."
+    },
+    {
+      "id": "q38",
+      "question": "Did Dory1.0-4B undergo any third-party biosafety or cybersecurity assessment, like Tencent Hy4 did?",
+      "type": "unanswerable",
+      "required_urls": [],
+      "expected_answer": "Not covered. The Dory1.0-4B article discusses its architecture, training data, and benchmark performance, but does not mention any safety, biosafety, or cybersecurity assessment.",
+      "evidence": "No safety-assessment language appears anywhere in the Dory1.0-4B article."
+    },
+    {
+      "id": "q39",
+      "question": "What numeric score did NorthCUA Pro achieve on the OSWorld-Verified benchmark?",
+      "type": "unanswerable",
+      "required_urls": [],
+      "expected_answer": "Not covered with an exact number. The article only reports that Pro 'outperforms Qwen3.8-Max and Kimi-K3' on OSWorld-Verified as a comparative verdict; it explicitly notes the leadership claims are stated as comparisons rather than numeric scores in the abstract.",
+      "evidence": "The article itself states the claims are comparative verdicts, not numeric scores."
+    },
+    {
+      "id": "q40",
+      "question": "Will Anthropic change API pricing or rate limits for Message Threads?",
+      "type": "single_fact",
+      "required_urls": [
+        "https://www.indiatoday.in/technology/news/story/anthropic-rolls-out-message-threads-in-public-beta-to-make-claude-ai-much-faster-3031855-2026-11-04"
+      ],
+      "expected_answer": "No. The article explicitly states that API pricing and rate limits stay exactly the same with Message Threads, since token usage doesn't change.",
+      "evidence": "Stated directly in the 'Pricing and Privacy Rules' section -- included here as a control question with a clear, answerable 'no' rather than a true gap."
+    },
+    {
+      "id": "q41",
+      "type": "multi_article",
+      "question": "Which weekly updates describe faster processing or inference, and what speed improvements do they report?",
+      "expected_answer": "Anthropic says Message Threads reduce time-to-first-token by about 35% for requests of 500,000 to 1 million tokens. SpecPilot improves speculative-decoding speedup from 4.46x to 10.87x for a single request and from 1.94x to 3.93x with batching. NorthCUA-Ultrafast reports 2.3x faster average completion on matched successful WebArena-Verified tasks."
+    },
+    {
+      "id": "q42",
+      "type": "multi_article",
+      "question": "Across this week’s stories, which AI systems interact with graphical interfaces or physical environments, and what does each interact with?",
+      "expected_answer": "NorthCUA provides computer-use agents for desktop and web environments; Tencent Hy4 introduces computer-use capabilities alongside visual understanding; REA is a runtime for embodied robot agents operating in physical or simulated environments."
+    },
+    {
+      "id": "q43",
+      "type": "multi_article",
+      "question": "What numerical performance or efficiency gains do this week’s reports give for AI systems, and which systems reported them?",
+      "expected_answer": "CoworkOS raises Qwen3.6-35B-A3B’s benchmark average from 33.19 to 42.95 over five rounds. REA reports 95.9% success on LIBERO-Pro with 25% fewer control steps than single-agent baselines. Dory1.0-4B’s looped inference reduces output tokens by 1.3x to 2.5x on agentic tasks. NorthCUA-Ultrafast reports 2.3x faster average completion on matched successful WebArena-Verified tasks."
+    },
+    {
+      "id": "q44",
+      "type": "multi_article",
+      "question": "What training-data scale is reported for Dory1.0-4B and NorthCUA, and what kind of data is being counted?",
+      "expected_answer": "Dory1.0-4B was pretrained on 6 trillion tokens, with the first 4.5 trillion in NVFP4 precision. NorthCUA reports more than 4 million GUI interaction steps across dozens of applications, collected in isolated E2B sandboxes and filtered by outcome."
+    },
+    {
+      "id": "q45",
+      "type": "multi_article",
+      "question": "Which articles discuss handling long inputs or long documents, and what capability or evaluation finding does each report?",
+      "expected_answer": "LongCat-2.5 discusses long-context training and rollout optimization, while Dory1.0-4B specifies a 256K-token context window. Anthropic reports that Message Threads reduce time-to-first-token for requests of 500,000 to 1 million tokens. StateBench evaluates state tracking as documents grow longer and reports frontier-model accuracy falling to 13% or lower on the longest general-finite problems."
+    },
+    {
+      "id": "q46",
+      "type": "multi_article",
+      "question": "What mechanisms for detecting or reducing unsafe AI behavior are described across this week’s stories?",
+      "expected_answer": "Gemini 4 Carbon describes a layered safety stack with training, real-time misuse defenses, prompt-injection resilience, and chain-of-thought monitoring. Tencent Hy4 says offensive exploitation data was excluded from training and cites assessments by Tencent’s Xuanwu and Keen Security Labs. OpenAI describes activation probes that monitor internal model activity token by token. The Hugging Face agent-security article argues for a pre-execution policy gate that evaluates proposed actions."
+    },
+    {
+      "id": "q47",
+      "type": "multi_article",
+      "question": "What benchmark evidence appears across reports about cybersecurity, robotics, computer use, and long-document reasoning?",
+      "expected_answer": "Gemini 4 Carbon reports 88.2% on SEC-bench Pro, 54.8% on ExploitGym, and 71.0% on CWE-bench. REA reports 95.9% success on LIBERO-Pro. NorthCUA reports comparative results on OSWorld-Verified and WebArena-Verified, including Pro outperforming Qwen3.8-Max and Kimi-K3 on OSWorld-Verified. StateBench reports frontier-model accuracy of 13% or lower on the longest general-finite state-tracking problems."
+    },
+    {
+      "id": "q48",
+      "type": "multi_article",
+      "question": "What different methods do this week’s articles describe for making model or agent execution more efficient?",
+      "expected_answer": "Dory1.0-4B uses looped inference and reports 1.3x to 2.5x fewer output tokens on agentic tasks. SpecPilot tunes speculative decoding to improve speedup. NorthCUA-Ultrafast combines direct action selection with generation and reports 2.3x faster average completion on matched successful WebArena-Verified tasks. Anthropic’s Message Threads reduce time-to-first-token by about 35% for 500,000-to-1-million-token requests."
+    },
+    {
+      "id": "q49",
+      "type": "multi_article",
+      "question": "Across the articles about interactive AI systems, what environments or task settings were used to evaluate them?",
+      "expected_answer": "REA reports evaluation across embodied-agent benchmarks including BEHAVIOR-1K, LIBERO-Pro, and RoboTwin 2.0. NorthCUA evaluates computer-use agents on OSWorld-Verified and WebArena-Verified. StateBench evaluates tracking state changes across long documents."
+    },
+    {
+      "id": "q50",
+      "type": "multi_article",
+      "question": "Which reports describe changes in hallucination, overreach, or unsupported claims, and what changes do they report?",
+      "expected_answer": "Tencent Hy4 reduces its hallucination rate from 12.95% for Hy4 Preview to 7.2%. Gemini 4 Carbon reduces overreach by 26% and under-service by 29% compared with its predecessor, and reports cutting unsupported claims by approximately 2x over Argon."
+    },
+    {
+      "id": "q51",
+      "type": "multi_article",
+      "question": "Which reports describe iterative or staged methods for improving AI agents, and what process does each use?",
+      "expected_answer": "CoworkOS uses RSI-driven post-training over five rounds, raising Qwen3.6-35B-A3B’s benchmark average from 33.19 to 42.95. NorthCUA describes an Experience Flywheel, a long-interaction Harness, and staged learning that progresses through grounding mid-training, long-horizon supervised fine-tuning, and joint desktop/web reinforcement learning."
+    },
+    {
+      "id": "q52",
+      "type": "category_scoped",
+      "question": "What model releases were covered in this week’s digest, and what is the headline capability or focus of each?",
+      "expected_answer": "Gemini 4 Carbon is presented as a frontier model for long-horizon work and cybersecurity; LongCat-2.5 is a large model with visual understanding and long context; Dory1.0-4B is a compact looped model for agentic tasks; Tencent Hy4 is an open-source model introducing visual understanding and computer-use capabilities."
+    },
+    {
+      "id": "q53",
+      "type": "category_scoped",
+      "question": "Among this week’s model releases, which articles state model parameter counts, and what counts do they give?",
+      "expected_answer": "LongCat-2.5 has 1.6 trillion total parameters and approximately 48 billion active per token. Dory1.0-4B has 4 billion parameters."
+    },
+    {
+      "id": "q54",
+      "type": "category_scoped",
+      "question": "Which model-release stories discuss cybersecurity or safety, and what evidence or safeguards does each mention?",
+      "expected_answer": "Gemini 4 Carbon reports 88.2% on SEC-bench Pro, 54.8% on ExploitGym, and 71.0% on CWE-bench, and describes layered safety defenses. Tencent Hy4 says offensive exploitation data was excluded from training, cites assessments by Xuanwu and Keen Security Labs that found no significant offensive cybersecurity concerns, and reports reducing hallucinations from 12.95% to 7.2%."
+    },
+    {
+      "id": "q55",
+      "type": "category_scoped",
+      "question": "What visual-understanding or computer-interaction capabilities are described in this week’s model releases?",
+      "expected_answer": "LongCat-2.5 adds native multimodal visual understanding through multi-level discrete visual tokens. Tencent Hy4 introduces visual understanding for the first time along with computer-use capabilities."
+    },
+    {
+      "id": "q56",
+      "type": "category_scoped",
+      "question": "What research papers or reports appeared in this week’s digest, and what topic does each address?",
+      "expected_answer": "CoworkOS studies a harness for self-improvement post-training; SpecPilot studies tuning speculative decoding; StateBench evaluates state tracking over long documents; REA presents a brain-and-cerebellum runtime for robot agents; NorthCUA presents open-source computer-use agents."
+    },
+    {
+      "id": "q57",
+      "type": "category_scoped",
+      "question": "Which research reports evaluate agents in computer or physical environments, and what benchmarks or settings do they use?",
+      "expected_answer": "REA evaluates embodied agents on BEHAVIOR-1K, LIBERO-Pro, and RoboTwin 2.0. NorthCUA evaluates computer-use agents on OSWorld-Verified and WebArena-Verified."
+    },
+    {
+      "id": "q58",
+      "type": "category_scoped",
+      "question": "What quantitative results are highlighted in the research papers covered this week?",
+      "expected_answer": "CoworkOS raises Qwen3.6-35B-A3B’s benchmark average from 33.19 to 42.95 over five rounds. SpecPilot raises speculative-decoding speedup from 4.46x to 10.87x for a single request and from 1.94x to 3.93x with batching. REA reports 95.9% LIBERO-Pro success with 25% fewer control steps. StateBench reports accuracy at 13% or lower on the longest general-finite problems. NorthCUA-Ultrafast reports 2.3x faster average completion on matched successful WebArena-Verified tasks."
+    },
+    {
+      "id": "q59",
+      "type": "category_scoped",
+      "question": "What methods for improving agent performance are described in this week’s research reports?",
+      "expected_answer": "CoworkOS uses an agent harness and RSI-driven post-training across five rounds. REA separates high-level planning and low-level execution in a brain-and-cerebellum runtime. NorthCUA combines an Experience Flywheel, a long-interaction Harness, and staged learning from grounding through supervised fine-tuning to desktop/web reinforcement learning."
+    },
+    {
+      "id": "q60",
+      "type": "category_scoped",
+      "question": "What safety-related research or announcements appeared in this week’s digest, and what does each propose?",
+      "expected_answer": "OpenAI describes training activation classifiers (probes) to monitor a model’s internal activations token by token and flag risky generations. The Hugging Face agent-security article proposes inspecting and gating proposed actions before execution instead of relying only on prompts."
+    },
+    {
+      "id": "q61",
+      "type": "category_scoped",
+      "question": "What evidence do this week’s safety articles give about the risks of malicious agent actions and the limits of action blocking?",
+      "expected_answer": "The Hugging Face backdoor demonstration denied all 290 proposed malicious payloads but also falsely denied 81 benign commands, showing the safety-versus-utility tradeoff of action blocking. The OpenAI probes article describes monitoring internal activations token by token as a complementary way to detect risky generations."
+    },
+    {
+      "id": "q62",
+      "type": "category_scoped",
+      "question": "What product or tooling update appeared in this week’s digest, and what changes for developers using it?",
+      "expected_answer": "Anthropic introduced Message Threads in public beta to reduce time-to-first-token by roughly 35% for requests of 500,000 to 1 million tokens. API pricing and rate limits remain unchanged; threads expire five minutes after the last request and are fully deleted within an hour of last use."
+    }
+  ]
+}

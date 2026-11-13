@@ -1,20 +1,32 @@
+"""Shared project logging configuration."""
+
 import logging
+from pathlib import Path
 
-def setup_logger(name, log_file='stack_feed.log', level=logging.DEBUG):
-    # Create a custom logger
+
+PROJECT_ROOT = Path(__file__).resolve().parent
+LOG_FILE = PROJECT_ROOT / 'stack_feed.log'
+
+_file_handler = logging.FileHandler(LOG_FILE, encoding='utf-8')
+_file_handler.setFormatter(
+    logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+)
+
+_console_handler = logging.StreamHandler()
+_console_handler.setFormatter(
+    logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+)
+
+
+def setup_logger(name, level=logging.DEBUG):
+    """Create a named logger that writes to the single root log file."""
     logger = logging.getLogger(name)
-
-    # Configure the custom logger
     logger.setLevel(level)
-    # used UTF-8 to avoid encoding errors with Unicode characters in logs
-    file_handler = logging.FileHandler(log_file, encoding='utf-8')
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
+    logger.propagate = False
 
-    console_formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(console_formatter)
-    logger.addHandler(stream_handler)
+    if _file_handler not in logger.handlers:
+        logger.addHandler(_file_handler)
+    if _console_handler not in logger.handlers:
+        logger.addHandler(_console_handler)
 
     return logger

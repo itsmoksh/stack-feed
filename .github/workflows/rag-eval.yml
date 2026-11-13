@@ -1,0 +1,51 @@
+name: RAG Evaluation Suite
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rag-eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run RAG evaluation suite
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          QDRANT_URL: ${{ secrets.QDRANT_URL }}
+          QDRANT_API_KEY: ${{ secrets.QDRANT_API_KEY }}
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+          LANGSMITH_TRACING: ${{ secrets.LANGSMITH_API_KEY != '' }}
+          LANGSMITH_PROJECT: stack-feed-rag-evals
+        run: uv run python evals/run_suite.py
+
+      - name: Upload evaluation report and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rag-eval-${{ github.run_number }}
+          path: |
+            evals/results/*.json
+            stack_feed.log
+          if-no-files-found: warn
+          retention-days: 30

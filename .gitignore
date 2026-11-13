@@ -17,3 +17,11 @@ fetcher/gmail_credentials.json
 latest_news.json
 .env
 stack_feed.log
+
+extra files
+filtered_articles.json
+articles.json
+
+extra-generated
+.deepeval/
+evals/results/

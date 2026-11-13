@@ -23,25 +23,18 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Restore Gmail credentials
-        shell: bash
-        run: |
-          mkdir -p fetcher
-          echo "$GMAIL_CREDENTIALS_JSON_B64" | base64 -d > fetcher/gmail_credentials.json
-          echo "$GMAIL_TOKEN_JSON_B64" | base64 -d > fetcher/token.json
-        env:
-          GMAIL_CREDENTIALS_JSON_B64: ${{ secrets.GMAIL_CREDENTIALS_JSON_B64 }}
-          GMAIL_TOKEN_JSON_B64: ${{ secrets.GMAIL_TOKEN_JSON_B64 }}
-
       - name: Run weekly bot
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
           DIGEST_CHANNEL_ID: ${{ secrets.DIGEST_CHANNEL_ID }}
-          METRICS_CHANNEL_ID: ${{ secrets.METRICS_CHANNEL_ID }}
+          EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           QDRANT_URL: ${{ secrets.QDRANT_URL }}
           QDRANT_API_KEY: ${{ secrets.QDRANT_API_KEY }}
+          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+          LANGSMITH_TRACING: ${{ secrets.LANGSMITH_API_KEY != '' }}
         run: uv run python discord_bot.py
 
       - name: Upload logs

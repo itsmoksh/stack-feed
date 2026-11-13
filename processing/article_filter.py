@@ -12,12 +12,12 @@ from sentence_transformers import SentenceTransformer
 from typesafe_sdk import Choice, TypeSafeClient
 
 from logging_setup import setup_logger
+from prompts import ARTICLE_IMPORTANCE_CRITERIA, ARTICLE_IMPORTANCE_INSTRUCTIONS
 
 load_dotenv()
 
 # Setup logger for filtering operations
-log_path = Path(__file__).resolve().parent.parent / 'stack_feed.log'
-filter_logger = setup_logger('filter_logger', log_path)
+filter_logger = setup_logger('filter_logger')
 
 articles_path = Path(__file__).resolve().parent.parent / 'articles.json'
 filtered_articles_path = Path(__file__).resolve().parent.parent / 'filtered_articles.json'
@@ -263,20 +263,8 @@ class ArticleFilter:
 
         questions = {
             "digest_relevance": Choice(
-                instructions=(
-                    "Classify whether this article should be included in a weekly technical AI digest "
-                    "for an AI engineer or data scientist. "
-                    "We WANT articles covering: foundation/open-weight model releases, architecture breakthroughs, "
-                    "technical AI research papers, core developer tooling/frameworks, AI safety/security evaluations, "
-                    "and hardware/inference performance benchmarks. "
-                    "We DO NOT WANT: company mergers/acquisitions, corporate business partnerships, "
-                    "commercial integrations between existing tools (e.g. tool A integrating into tool B), "
-                    "customer case studies, enterprise marketing, executive moves, or general sales announcements."
-                ),
-                criteria={
-                    "include": "Technical AI breakthroughs, model releases, research papers, developer frameworks, benchmarks, or AI safety evaluations.",
-                    "exclude": "Company partnerships, corporate integrations between tools, business deals, customer stories, or non-technical business fluff."
-                }
+                instructions=ARTICLE_IMPORTANCE_INSTRUCTIONS,
+                criteria=ARTICLE_IMPORTANCE_CRITERIA,
             )
         }
 
@@ -509,8 +497,30 @@ class ArticleFilter:
         output_path: Optional[Path] = None,
     ) -> Path:
 
+        # Run content preprocessing before grouping or writing the JSON. Import
+        # lazily so filtering-only workflows do not initialize the Groq client.
+        from processing.process_content import preprocess_article_tables
+
+        processed_articles = []
+        for article in articles:
+            processed_article = dict(article)
+            content = processed_article.get("content")
+            if isinstance(content, str) and content.strip():
+                try:
+                    processed_article["content"] = preprocess_article_tables(
+                        content,
+                        processed_article.get("title", ""),
+                    )
+                except Exception as exc:
+                    title = processed_article.get("title", "<untitled>")
+                    raise RuntimeError(
+                        f"Unable to preprocess article {title!r}; "
+                        "filtered_articles.json was not written."
+                    ) from exc
+            processed_articles.append(processed_article)
+
         filtered_by_cat = {}
-        for a in articles:
+        for a in processed_articles:
             cat = a.get('category')
             filtered_by_cat.setdefault(cat, []).append(a)
 
@@ -523,7 +533,10 @@ class ArticleFilter:
 
 
 if __name__ == "__main__":
-    article_filter = ArticleFilter()
+    article_path = Path(__file__).resolve().parent.parent / "articles.json"
+    with open(article_path,'r', encoding='utf-8') as f:
+        articles = json.load(f)
+    article_filter = ArticleFilter(articles)
     filtered = article_filter.filter_articles(target_count=12)
     article_filter.save_filtered_articles(filtered)
 

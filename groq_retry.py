@@ -1,13 +1,10 @@
 import re
 import time
-from pathlib import Path
-
 from groq import RateLimitError
 
 from logging_setup import setup_logger
 
-log_path = Path(__file__).parent / 'stack_feed.log'
-retry_logger = setup_logger('retry_logger', log_path)
+retry_logger = setup_logger('retry_logger')
 
 
 def run_groq_with_retry(make_call, max_attempts: int = 5):

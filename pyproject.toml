@@ -5,15 +5,16 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "bs4>=0.0.2",
-    "chonkie[model2vec]>=1.6.4",
+    "deepeval>=4.3.3",
     "discord>=2.3.2",
     "exa-py>=2.27.0",
-    "fastembed>=0.8.0",
-    "feedparser>=6.0.12",
-    "groq>=1.1.2",
+    "groq>=0.30.0,<1.0.0",
+    "langgraph>=1.0.0",
     "python-dotenv>=1.2.2",
     "qdrant-client>=1.17.1",
     "sentence-transformers>=5.4.1",
     "typesafe-sdk>=0.7.5",
+    "tzdata>=2026.6",
+    "langchain>=1.4.9",
+    "langchain-groq>=1.0.0",
 ]
