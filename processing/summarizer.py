@@ -36,7 +36,8 @@ def load_filtered_articles():
     except JSONDecodeError:
         summarize_logger.error(f"Unable to decode JSON file: {filtered_articles_path}")
     else:
-        summarize_logger.info(f"Loaded {len(filtered_articles.values())} filtered articles")
+        article_count = sum(len(articles) for articles in filtered_articles.values())
+        summarize_logger.info('Loaded %d filtered articles across %d categories',article_count,len(filtered_articles))
         return filtered_articles
 
 client = Groq()
@@ -53,9 +54,19 @@ def _summarize_text_with_retry(content: str, category: str) -> str:
                 {"role": 'user', 'content': content}],
             max_completion_tokens=512,
         )
-        return completion.choices[0].message.content
+        answer = completion.choices[0].message.content
+        return answer
 
-    return run_groq_with_retry(make_call)
+    for empty_attempt in range(2):
+        answer = run_groq_with_retry(make_call)
+        if isinstance(answer, str) and answer.strip():
+            return answer.strip()
+        summarize_logger.warning(
+            'Summarization model returned empty content category=%s attempt=%d/2',
+            category,
+            empty_attempt + 1,
+        )
+    return ''
 
 
 def _split_summary_input(content: str) -> list[str]:
@@ -111,13 +122,22 @@ async def summarize(refresh: bool = True):
         category_summaries = []
         for article in articles:
             summary = await asyncio.to_thread(summarize_with_retry,article['content'],category)
+            if not isinstance(summary, str) or not summary.strip():
+                summarize_logger.warning('Empty summary for article title=%r category=%s url=%s',
+                                         article.get('title', 'No Title'),
+                                         category,
+                                         article.get('url', 'unknown'))
+            else:
+                summarize_logger.info('Summary generated title=%r category=%s chars=%d url=%s',
+                                      article.get('title', 'No Title'),
+                                      category,len(summary),
+                                      article.get('url', 'unknown'))
             summarized_article = {
                 "title": article['title'],
                 "summary": summary,
                 "source": article['url']
             }
             category_summaries.append(summarized_article)
-            summarize_logger.info(f"Summarized the news from {article['url']} ")
 
         yield category, category_summaries
     summarize_logger.info("All the weekly news are summarized..")

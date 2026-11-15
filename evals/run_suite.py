@@ -30,6 +30,7 @@ from evals.rag_generator_eval import run as run_generator_eval
 from evals.rag_retriever_eval import run as run_retriever_eval
 from logging_setup import setup_logger
 from rag.generator import ABSTENTION_ANSWER
+from rag.vector_store import EVALUATION_COLLECTION_NAME
 from rag.workflow import build_graph
 
 
@@ -88,6 +89,7 @@ def run_suite(dataset_path=GOLDEN_PATH):
         len(generator_questions),
     )
     suite_logger.info('Running each golden query once and reusing its graph state across both evaluations')
+    suite_logger.info('Using Qdrant evaluation collection=%s', EVALUATION_COLLECTION_NAME)
 
     graph = build_graph()
     retriever_cases = []
@@ -105,6 +107,7 @@ def run_suite(dataset_path=GOLDEN_PATH):
         state = graph.invoke(
             {
                 'question': golden['question'],
+                'collection_name': EVALUATION_COLLECTION_NAME,
             },
             config={'callbacks': [run_capture]},
         )
@@ -120,6 +123,7 @@ def run_suite(dataset_path=GOLDEN_PATH):
             'searched_queries': state.get('searched_queries', []),
             'evidence_gap_history': state.get('evidence_gap_history', []),
             'retrieved_chunk_count': len(contexts),
+            'qdrant_collection': EVALUATION_COLLECTION_NAME,
         }
 
         if golden['type'] != 'unanswerable':

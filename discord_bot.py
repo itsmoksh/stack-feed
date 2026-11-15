@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from processing.summarizer import summarize
-from rag.vector_store import ingest_digest
+from rag.vector_store import collection_name, ingest_digest
 from rag.workflow import build_graph
 from dotenv import load_dotenv
 from zoneinfo import ZoneInfo
@@ -187,7 +187,7 @@ async def answer_in_thread(thread, question):
 
     try:
         async for event in rag_graph.astream(
-            {'question': question},
+            {'question': question, 'collection_name': collection_name},
             stream_mode=['messages', 'updates'],
             version='v2',
         ):

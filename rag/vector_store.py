@@ -14,6 +14,7 @@ filtered_articles_path = Path(__file__).resolve().parent.parent / "filtered_arti
 dense_model_name = "sentence-transformers/all-MiniLM-L6-v2"
 sparse_model_name = "qdrant/bm25"
 collection_name = "weekly_digest_structured"
+EVALUATION_COLLECTION_NAME = "weekly_digest_eval"
 
 rag_logger = setup_logger('structured_rag_log')
 
@@ -57,7 +58,6 @@ def chunker(max_section_chars: int = 1048):
 
     for category, articles in articles_by_category.items():
         for ar_id, article in enumerate(articles):
-            print("="*30, article["title"], "="*30)
             article_chunks = structure_chunker.chunk(
                 article_text=article["content"],
                 article_title=article["title"],
@@ -65,7 +65,6 @@ def chunker(max_section_chars: int = 1048):
             )
 
             for chunk in article_chunks:
-                print(chunk.embed_text)
                 # Both retrieval channels see chunk.embed_text, which already
                 # carries the [category] title — header: content prefix.
                 docs.append(
@@ -89,7 +88,6 @@ def chunker(max_section_chars: int = 1048):
                         ),
                     }
                 )
-                print(payloads[-1])
 
     return docs, payloads
 

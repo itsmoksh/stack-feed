@@ -146,16 +146,21 @@ def category_scroll_node(state: RAGState) -> dict[str, Any]:
         raise ValueError('RAGState.question must contain the user query')
 
     category = state.get('category')
+    collection_name = state.get('collection_name')
+    if not collection_name:
+        raise ValueError('RAGState.collection_name is required for retrieval')
+
     if category:
-        all_category_chunks = scroll_category_chunks(category)
+        all_category_chunks = scroll_category_chunks(category, collection_name)
         chunks = select_initial_chunks_per_article(
             all_category_chunks,
             CATEGORY_BROAD_CHUNKS_PER_ARTICLE,
         )
         retrieval_logger.info(
-            'Category retrieval completed category=%s scope=%s candidates=%d selected=%d articles=%d',
+            'Category retrieval completed category=%s scope=%s collection=%s candidates=%d selected=%d articles=%d',
             category,
             state.get('category_scope'),
+            collection_name,
             len(all_category_chunks),
             len(chunks),
             len({chunk.get('_article_number') for chunk in chunks}),
@@ -165,7 +170,11 @@ def category_scroll_node(state: RAGState) -> dict[str, Any]:
             'Category was not extracted; falling back to unfiltered hybrid search question=%s',
             question,
         )
-        chunks = hybrid_search(question, BROAD_CANDIDATE_TOP_K)
+        chunks = hybrid_search(
+            question,
+            BROAD_CANDIDATE_TOP_K,
+            collection_name,
+        )
 
     return {
         'active_query': question,
@@ -251,6 +260,10 @@ def retriever_node(state: RAGState) -> dict[str, Any]:
     if not query:
         raise ValueError('RAGState must contain an active_query or question')
 
+    collection_name = state.get('collection_name')
+    if not collection_name:
+        raise ValueError('RAGState.collection_name is required for retrieval')
+
     question_type = state.get('question_type')
     if question_type == 'multi_article' or (
         question_type == 'category_scoped' and state.get('category_scope') == 'focused'
@@ -267,14 +280,20 @@ def retriever_node(state: RAGState) -> dict[str, Any]:
     )
 
     retrieval_logger.info(
-        'Retrieval started type=%s query=%s category_filter=%s prefetch_limit=%d final_top_k=%d',
+        'Retrieval started type=%s collection=%s query=%s category_filter=%s prefetch_limit=%d final_top_k=%d',
         question_type,
+        collection_name,
         query,
         category_filter,
         PREFETCH_LIMIT,
         top_k,
     )
-    new_chunks = hybrid_search(query, top_k, category_filter)
+    new_chunks = hybrid_search(
+        query,
+        top_k,
+        collection_name,
+        category=category_filter,
+    )
     retrieval_rankings = list(state.get('retrieval_rankings', []))
     if new_chunks:
         retrieval_rankings.append([

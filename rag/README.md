@@ -52,7 +52,9 @@ text is treated as source data, not as instructions.
 
 ## Qdrant collection
 
-`vector_store.py` stores chunks in the `weekly_digest_structured` collection.
+`vector_store.py` ingests weekly articles into the live `weekly_digest_structured`
+collection. The Discord bot reads this collection for that week's Q&A. The
+evaluation suite explicitly reads the separate `weekly_digest_eval` collection.
 `StructureAwareChunker` splits articles on Markdown section headers, splits
 large sections further, and drops near-empty fragments. It adds the article
 title and category to the text used for embeddings, while storing the original
@@ -62,10 +64,12 @@ The collection uses Qdrant cloud inference with the
 `sentence-transformers/all-MiniLM-L6-v2` dense model and Qdrant BM25 sparse
 vectors. The `category` payload is indexed for filtered search.
 
-Calling `ingest_digest(refresh=True)` deletes and recreates this collection
+Calling `ingest_digest(refresh=True)` deletes and recreates the live collection
 before uploading chunks from the root `filtered_articles.json`. The Discord bot
 does this after publishing each digest. The evaluation suite only queries the
-existing collection; it does not ingest or change data.
+existing `weekly_digest_eval` collection; it does not ingest or change either
+collection. Keep that evaluation collection populated with the snapshot used by
+the golden dataset.
 
 ## Run and evaluate
 
@@ -74,11 +78,17 @@ For a local graph call, configure `GROQ_API_KEY`, `TYPESAFE_API_KEY`,
 
 ```python
 from rag.workflow import build_graph
+from rag.vector_store import collection_name
 
 graph = build_graph()
-result = graph.invoke({"question": "What research papers were in this week's digest?"})
+result = graph.invoke({
+    "question": "What research papers were in this week's digest?",
+    "collection_name": collection_name,
+})
 print(result["answer"])
 ```
+
+Pass `EVALUATION_COLLECTION_NAME` instead when invoking the graph for evaluation.
 
 The Discord bot configures streaming with `build_graph(stream_generator=True)`.
 The evaluation suite can be run from the project root with:

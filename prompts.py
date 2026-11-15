@@ -21,6 +21,8 @@ Rules:
       hint, not a strict theme — newsletters bundle multiple unrelated news items together, 
       so summarize the distinct important stories it actually contains rather than forcing 
       everything into one category's framing
+- Return plain Discord-compatible Markdown. Do not use HTML tags such as <br>.
+- Never format the answer as a Markdown table; Discord does not render tables.
 
 Output format:
 - bullet 1

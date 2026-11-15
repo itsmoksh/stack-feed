@@ -48,14 +48,17 @@ def reciprocal_rank_fuse(
     }
 
 
-def hybrid_search(query: str, top_k: int, category: str | None = None) -> list[dict]:
+def hybrid_search(
+    query: str,
+    top_k: int,
+    collection_name: str,
+    category: str | None = None,
+) -> list[dict]:
     """Search dense and BM25 vectors with RRF and an optional category filter."""
-    from rag.vector_store import (
-        client,
-        collection_name,
-        dense_model_name,
-        sparse_model_name,
-    )
+    if not collection_name:
+        raise ValueError('A Qdrant collection name is required for retrieval')
+
+    from rag.vector_store import client, dense_model_name, sparse_model_name
 
     category_filter = None
     if category:

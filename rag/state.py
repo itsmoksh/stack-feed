@@ -2,6 +2,7 @@ from typing_extensions import TypedDict, Any, Literal
 
 class RAGState(TypedDict, total=False):
     question: str
+    collection_name: str
     category: Literal["model release","product/tooling","safety","research"] | None
     question_type: Literal["single_fact","comparison","multi_article","category_scoped"] | None
     category_scope: Literal["broad", "focused"] | None

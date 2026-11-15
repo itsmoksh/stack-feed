@@ -46,12 +46,17 @@ def group_chunks_by_article(chunks: list[dict[str, Any]]) -> list[list[dict[str,
     return article_groups
 
 
-def scroll_category_chunks(category: str) -> list[dict[str, Any]]:
+def scroll_category_chunks(
+    category: str,
+    collection_name: str,
+) -> list[dict[str, Any]]:
     """Scroll every stored chunk for one category, following all Qdrant pages."""
     if not category:
         raise ValueError('A category is required for category-scoped scrolling')
+    if not collection_name:
+        raise ValueError('A Qdrant collection name is required for category scrolling')
 
-    from rag.vector_store import client, collection_name
+    from rag.vector_store import client
 
     category_filter = models.Filter(
         must=[
