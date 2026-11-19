@@ -6,6 +6,14 @@ Run both evaluations from the shared golden dataset with:
 python evals/run_suite.py
 ```
 
+To write a known report path and compare its aggregate-by-question-type scores
+with the six-run baseline:
+
+```powershell
+python evals/run_suite.py --output evals/results/pr_report.json
+python evals/compare.py --report evals/results/pr_report.json
+```
+
 The suite runs every question in `golden_dataset_router_eval.json` through the
 full graph once, then builds evaluator cases from the same graph result.
 Retriever metrics include all answerable questions; unanswerable questions are
@@ -27,3 +35,10 @@ in `.env` or the environment.
 The retriever report contains contextual precision and contextual recall. The
 generator report contains contextual relevancy, answer relevancy, and
 faithfulness.
+
+The PR workflow runs the suite and comparator automatically. It compares each
+category-metric average with the one-sided 2-standard-deviation threshold in
+`baseline.json`. On pull requests, the workflow reads the baseline from the PR's
+base branch so a PR cannot relax the threshold it is being checked against.
+Missing metrics, changed golden-dataset content, mismatched case counts, and
+incomplete reports fail the comparison.

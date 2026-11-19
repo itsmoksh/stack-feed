@@ -1,6 +1,8 @@
 name: RAG Evaluation Suite
 
 on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
 permissions:
@@ -8,6 +10,7 @@ permissions:
 
 jobs:
   rag-eval:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 180
 
@@ -28,6 +31,18 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
+      - name: Select trusted baseline
+        id: baseline
+        shell: bash
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            git fetch origin "$GITHUB_BASE_REF"
+            git show FETCH_HEAD:evals/baseline.json > /tmp/rag-baseline.json
+            echo "path=/tmp/rag-baseline.json" >> "$GITHUB_OUTPUT"
+          else
+            echo "path=evals/baseline.json" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Run RAG evaluation suite
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
@@ -37,7 +52,12 @@ jobs:
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
           LANGSMITH_TRACING: ${{ secrets.LANGSMITH_API_KEY != '' }}
           LANGSMITH_PROJECT: stack-feed-rag-evals
-        run: uv run python evals/run_suite.py
+        run: uv run python evals/run_suite.py --output evals/results/pr_report.json
+
+      - name: Compare evaluation with baseline
+        env:
+          BASELINE_PATH: ${{ steps.baseline.outputs.path }}
+        run: uv run python evals/compare.py --baseline "$BASELINE_PATH" --report evals/results/pr_report.json
 
       - name: Upload evaluation report and logs
         if: always()

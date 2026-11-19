@@ -7,6 +7,7 @@ from typing import Any
 from dotenv import load_dotenv
 from langchain.chat_models import init_chat_model
 
+from groq_retry import run_groq_with_retry, stream_groq_with_retry
 from logging_setup import setup_logger
 from rag.state import RAGState
 from rag.prompts import answer_prompt
@@ -25,6 +26,7 @@ generator_model = init_chat_model(
     model=GENERATOR_MODEL,
     model_provider='groq',
     temperature=0,
+    max_retries=0,
 )
 
 
@@ -134,7 +136,7 @@ def generator_node(state: RAGState) -> dict[str, Any]:
     if isinstance(prepared, dict):
         return prepared
     _, prompt = prepared
-    response = generator_model.invoke(prompt)
+    response = run_groq_with_retry(lambda: generator_model.invoke(prompt))
     answer = _message_text(response)
     if not answer:
         answer = ABSTENTION_ANSWER
@@ -151,7 +153,7 @@ async def generator_stream_node(state: RAGState) -> dict[str, Any]:
     _, prompt = prepared
 
     answer_parts = []
-    async for message_chunk in generator_model.astream(prompt):
+    async for message_chunk in stream_groq_with_retry(lambda: generator_model.astream(prompt)):
         content = getattr(message_chunk, 'content', '')
         if isinstance(content, str):
             answer_parts.append(content)

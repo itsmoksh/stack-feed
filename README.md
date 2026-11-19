@@ -18,8 +18,8 @@ the RAG workflow.
 - Indexes articles in Qdrant for dense and sparse hybrid retrieval.
 - Routes questions by answer shape, checks for missing evidence, and generates
   answers grounded in retrieved article text.
-- Runs a shared golden dataset through the RAG graph and records evaluation
-  reports locally or as GitHub Actions artifacts.
+- Runs a shared golden dataset through the RAG graph, records evaluation
+  reports, and checks PR results against the category-level baseline.
 
 ## Architecture
 
@@ -37,9 +37,9 @@ flowchart TD
     K --> L[LangGraph RAG workflow]
     J --> L
     L --> M[Grounded answer in Discord]
-    N[Golden evaluation dataset] --> O[Manual RAG evaluation workflow]
+    N[Golden evaluation dataset] --> O[Manual or PR RAG evaluation workflow]
     O --> L
-    O --> P[JSON report artifact]
+    O --> P[JSON report and baseline comparison]
 ```
 
 ## How It Works
@@ -116,7 +116,8 @@ uv run python processing/article_filter.py
 Run the RAG evaluation suite against the configured Qdrant collection:
 
 ```bash
-uv run python evals/run_suite.py
+uv run python evals/run_suite.py --output evals/results/pr_report.json
+uv run python evals/compare.py --report evals/results/pr_report.json
 ```
 
 The collection must already contain the digest chunks. The suite does not
@@ -125,16 +126,19 @@ is ignored by Git.
 
 ## GitHub Actions
 
-Both workflows are started manually from the repository's **Actions** tab.
+The weekly bot workflow is started manually from the repository's **Actions**
+tab. The RAG evaluation workflow can be started manually and also runs for
+non-draft pull requests.
 
 - `weekly-bot.yml` runs the complete digest bot. Add repository secrets
   `DISCORD_TOKEN`, `DIGEST_CHANNEL_ID`, `EXA_API_KEY`, `TYPESAFE_API_KEY`,
   `GROQ_API_KEY`, `QDRANT_URL`, and `QDRANT_API_KEY`. `HF_TOKEN` and
   `LANGSMITH_API_KEY` are optional.
 - `rag-eval.yml` runs the evaluation suite against the existing Qdrant
-  collection. It needs `GROQ_API_KEY`, `QDRANT_URL`, `QDRANT_API_KEY`, and
-  `TYPESAFE_API_KEY`. `LANGSMITH_API_KEY` is optional. The generated JSON report
-  and log are uploaded as a 30-day workflow artifact.
+  collection and compares aggregate-by-question-type metrics with the trusted
+  base-branch `evals/baseline.json`. It needs `GROQ_API_KEY`, `QDRANT_URL`,
+  `QDRANT_API_KEY`, and `TYPESAFE_API_KEY`. `LANGSMITH_API_KEY` is optional.
+  The generated JSON report and log are uploaded as a 30-day workflow artifact.
 
 ## Project Structure
 
@@ -164,6 +168,8 @@ stack-feed/
 |-- evals/
 |   |-- golden_dataset_router_eval.json # Shared evaluation questions
 |   |-- run_suite.py            # Run graph and evaluate results
+|   |-- baseline.json           # Category-level 2-SD regression thresholds
+|   |-- compare.py              # Compare eval report with the baseline
 |   |-- results/                # Generated, Git-ignored reports
 |-- prompts.py                 # Processing prompt templates
 |-- groq_retry.py               # Shared Groq retry helper

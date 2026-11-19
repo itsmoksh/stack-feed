@@ -6,7 +6,9 @@ import logging
 from typing import Any
 
 from dotenv import load_dotenv
+from groq import RateLimitError
 from typesafe_sdk import Choice, TypeSafeClient
+from groq_retry import run_groq_with_retry
 
 from logging_setup import setup_logger
 from rag.hybrid_search import PREFETCH_LIMIT, hybrid_search, reciprocal_rank_fuse
@@ -49,7 +51,8 @@ MAX_EVIDENCE_GAP_ROUNDS = 3
 model = init_chat_model(
     model = DECOMPOSER_MODEL,
     model_provider='groq',
-    temperature=0
+    temperature=0,
+    max_retries=0,
 )
 
 def _get_typesafe_client() -> TypeSafeClient:
@@ -204,7 +207,7 @@ def decomposer_node(state: RAGState) -> dict[str, Any]:
     prompt = decomposer_prompt(question, MAX_SUBQUERIES)
 
     try:
-        response = model.invoke(prompt)
+        response = run_groq_with_retry(lambda: model.invoke(prompt))
         raw = response.content
         if isinstance(raw, list):
             raw = ''.join(
@@ -226,6 +229,8 @@ def decomposer_node(state: RAGState) -> dict[str, Any]:
             query.strip() for query in queries
             if isinstance(query, str) and query.strip()
         ))[:MAX_SUBQUERIES]
+    except RateLimitError:
+        raise
     except Exception as exc:
         retrieval_logger.warning('Decomposition failed; falling back to original query: %s', exc)
         subqueries = []
@@ -402,7 +407,7 @@ def evidence_gap_node(state: RAGState) -> dict[str, Any]:
     )
 
     try:
-        response = model.invoke(prompt)
+        response = run_groq_with_retry(lambda: model.invoke(prompt))
         raw = response.content
         if isinstance(raw, list):
             raw = ''.join(
@@ -429,6 +434,8 @@ def evidence_gap_node(state: RAGState) -> dict[str, Any]:
             follow_up_query = follow_up_query.strip()
         else:
             follow_up_query = None
+    except RateLimitError:
+        raise
     except Exception as exc:
         retrieval_logger.warning('Evidence-gap review failed; stopping retrieval: %s', exc)
         enough_evidence = True

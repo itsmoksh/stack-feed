@@ -1,0 +1,349 @@
+{
+  "schema_version": 1,
+  "baseline": {
+    "created_from": "six saved sequential RAG evaluation suite JSON reports",
+    "run_count": 6,
+    "category_dimension": "golden_question_type",
+    "golden_dataset_week": "2026-10-28 to 2026-11-04",
+    "golden_dataset_sha256": "2c913c8df1637a6257e1880c7f98c1028954906187b455312b0149c9306dfd29",
+    "evaluation_collection": "weekly_digest_eval",
+    "aggregation": "Mean of per-run category aggregate averages; sample standard deviation across runs",
+    "threshold_standard_deviations": 2,
+    "decision_policy": "Every configured category-metric threshold must pass; incomplete evaluation runs are invalid.",
+    "categories": {
+      "single_fact": {
+        "question_count": 15,
+        "metrics": {
+          "contextual_precision": {
+            "mean": 0.702617,
+            "sample_standard_deviation": 0.029012,
+            "direction": "higher_is_better",
+            "two_sd_band": {
+              "lower": 0.644593,
+              "upper": 0.760641
+            },
+            "pass_threshold": {
+              "operator": ">=",
+              "value": 0.644593
+            }
+          },
+          "contextual_recall": {
+            "mean": 0.89245,
+            "sample_standard_deviation": 0.038393,
+            "direction": "higher_is_better",
+            "two_sd_band": {
+              "lower": 0.815664,
+              "upper": 0.969236
+            },
+            "pass_threshold": {
+              "operator": ">=",
+              "value": 0.815664
+            }
+          },
+          "contextual_relevancy": {
+            "mean": 0.161267,
+            "sample_standard_deviation": 0.002996,
+            "direction": "higher_is_better",
+            "two_sd_band": {
+              "lower": 0.155274,
+              "upper": 0.16726
+            },
+            "pass_threshold": {
+              "operator": ">=",
+              "value": 0.155274
+            }
+          },
+          "answer_relevancy": {
+            "mean": 0.9787,
+            "sample_standard_deviation": 0.00747,
+            "direction": "higher_is_better",
+            "two_sd_band": {
+              "lower": 0.963761,
+              "upper": 0.993639
+            },
+            "pass_threshold": {
+              "operator": ">=",
+              "value": 0.963761
+            }
+          },
+          "faithfulness": {
+            "mean": 0.9747,
+            "sample_standard_deviation": 0.002889,
+            "direction": "higher_is_better",
+            "two_sd_band": {
+              "lower": 0.968921,
+              "upper": 0.980479
+            },
+            "pass_threshold": {
+              "operator": ">=",
+              "value": 0.968921
+            }
+          }
+        }
+      },
+      "comparison": {
+        "question_count": 10,
+        "metrics": {
+          "contextual_precision": {
+            "mean": 0.695133,
+            "sample_standard_deviation": 0.017647,
+            "direction": "higher_is_better",
+            "two_sd_band": {
+              "lower": 0.65984,
+              "upper": 0.730427
+            },
+            "pass_threshold": {
+              "operator": ">=",
+              "value": 0.65984
+            }
+          },
+          "contextual_recall": {
+            "mean": 0.89245,
+            "sample_standard_deviation": 0.002233,
+            "direction": "higher_is_better",
+            "two_sd_band": {
+              "lower": 0.887984,
+              "upper": 0.896916
+            },
+            "pass_threshold": {
+              "operator": ">=",
+              "value": 0.887984
+            }
+          },
+          "contextual_relevancy": {
+            "mean": 0.1766,
+            "sample_standard_deviation": 0.008691,
+            "direction": "higher_is_better",
+            "two_sd_band": {
+              "lower": 0.159218,
+              "upper": 0.193982
+            },
+            "pass_threshold": {
+              "operator": ">=",
+              "value": 0.159218
+            }
+          },
+          "answer_relevancy": {
+            "mean": 0.980883,
+            "sample_standard_deviation": 0.003651,
+            "direction": "higher_is_better",
+            "two_sd_band": {
+              "lower": 0.973581,
+              "upper": 0.988185
+            },
+            "pass_threshold": {
+              "operator": ">=",
+              "value": 0.973581
+            }
+          },
+          "faithfulness": {
+            "mean": 0.952867,
+            "sample_standard_deviation": 0.01249,
+            "direction": "higher_is_better",
+            "two_sd_band": {
+              "lower": 0.927887,
+              "upper": 0.977846
+            },
+            "pass_threshold": {
+              "operator": ">=",
+              "value": 0.927887
+            }
+          }
+        }
+      },
+      "multi_article": {
+        "question_count": 12,
+        "metrics": {
+          "contextual_precision": {
+            "mean": 0.385367,
+            "sample_standard_deviation": 0.02878,
+            "direction": "higher_is_better",
+            "two_sd_band": {
+              "lower": 0.327808,
+              "upper": 0.442926
+            },
+            "pass_threshold": {
+              "operator": ">=",
+              "value": 0.327808
+            }
+          },
+          "contextual_recall": {
+            "mean": 0.2818,
+            "sample_standard_deviation": 0.025701,
+            "direction": "higher_is_better",
+            "two_sd_band": {
+              "lower": 0.230398,
+              "upper": 0.333202
+            },
+            "pass_threshold": {
+              "operator": ">=",
+              "value": 0.230398
+            }
+          },
+          "contextual_relevancy": {
+            "mean": 0.279133,
+            "sample_standard_deviation": 0.020712,
+            "direction": "higher_is_better",
+            "two_sd_band": {
+              "lower": 0.237709,
+              "upper": 0.320558
+            },
+            "pass_threshold": {
+              "operator": ">=",
+              "value": 0.237709
+            }
+          },
+          "answer_relevancy": {
+            "mean": 0.88305,
+            "sample_standard_deviation": 0.016303,
+            "direction": "higher_is_better",
+            "two_sd_band": {
+              "lower": 0.850444,
+              "upper": 0.915656
+            },
+            "pass_threshold": {
+              "operator": ">=",
+              "value": 0.850444
+            }
+          },
+          "faithfulness": {
+            "mean": 0.807517,
+            "sample_standard_deviation": 0.022087,
+            "direction": "higher_is_better",
+            "two_sd_band": {
+              "lower": 0.763343,
+              "upper": 0.85169
+            },
+            "pass_threshold": {
+              "operator": ">=",
+              "value": 0.763343
+            }
+          }
+        }
+      },
+      "category_scoped": {
+        "question_count": 15,
+        "metrics": {
+          "contextual_precision": {
+            "mean": 0.6286,
+            "sample_standard_deviation": 0.015734,
+            "direction": "higher_is_better",
+            "two_sd_band": {
+              "lower": 0.597131,
+              "upper": 0.660069
+            },
+            "pass_threshold": {
+              "operator": ">=",
+              "value": 0.597131
+            }
+          },
+          "contextual_recall": {
+            "mean": 0.62635,
+            "sample_standard_deviation": 0.022916,
+            "direction": "higher_is_better",
+            "two_sd_band": {
+              "lower": 0.580519,
+              "upper": 0.672181
+            },
+            "pass_threshold": {
+              "operator": ">=",
+              "value": 0.580519
+            }
+          },
+          "contextual_relevancy": {
+            "mean": 0.5414,
+            "sample_standard_deviation": 0.007104,
+            "direction": "higher_is_better",
+            "two_sd_band": {
+              "lower": 0.527191,
+              "upper": 0.555609
+            },
+            "pass_threshold": {
+              "operator": ">=",
+              "value": 0.527191
+            }
+          },
+          "answer_relevancy": {
+            "mean": 0.947983,
+            "sample_standard_deviation": 0.011356,
+            "direction": "higher_is_better",
+            "two_sd_band": {
+              "lower": 0.925271,
+              "upper": 0.970696
+            },
+            "pass_threshold": {
+              "operator": ">=",
+              "value": 0.925271
+            }
+          },
+          "faithfulness": {
+            "mean": 0.87985,
+            "sample_standard_deviation": 0.0211,
+            "direction": "higher_is_better",
+            "two_sd_band": {
+              "lower": 0.837649,
+              "upper": 0.922051
+            },
+            "pass_threshold": {
+              "operator": ">=",
+              "value": 0.837649
+            }
+          }
+        }
+      },
+      "unanswerable": {
+        "question_count": 4,
+        "metrics": {
+          "contextual_relevancy": {
+            "mean": 0.22155,
+            "sample_standard_deviation": 0.005697,
+            "direction": "lower_is_better",
+            "two_sd_band": {
+              "lower": 0.210157,
+              "upper": 0.232943
+            },
+            "pass_threshold": {
+              "operator": "<=",
+              "value": 0.232943
+            },
+            "rationale": "Lower context relevancy is preferred for unanswerable questions because retrieval should not return evidence that appears to support an unavailable answer."
+          },
+          "answer_relevancy": {
+            "mean": 0.892117,
+            "sample_standard_deviation": 0.005005,
+            "direction": "higher_is_better",
+            "two_sd_band": {
+              "lower": 0.882107,
+              "upper": 0.902127
+            },
+            "pass_threshold": {
+              "operator": ">=",
+              "value": 0.882107
+            }
+          },
+          "faithfulness": {
+            "mean": 0.9251,
+            "sample_standard_deviation": 0.00705,
+            "direction": "higher_is_better",
+            "two_sd_band": {
+              "lower": 0.911,
+              "upper": 0.9392
+            },
+            "pass_threshold": {
+              "operator": ">=",
+              "value": 0.911
+            }
+          }
+        }
+      }
+    },
+    "source_report_files": [
+      "rag_eval_suite_20261118_133517.json",
+      "rag_eval_suite_20261118_150738.json",
+      "rag_eval_suite_20261118_195420.json",
+      "rag_eval_suite_20261119_084545.json",
+      "rag_eval_suite_20261119_100549.json",
+      "rag_eval_suite_20261119_104437.json"
+    ]
+  }
+}

@@ -10,6 +10,7 @@ import sys
 import tempfile
 
 from dotenv import load_dotenv
+from groq import RateLimitError
 from langchain_core.callbacks import BaseCallbackHandler
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -78,7 +79,38 @@ def _langsmith_client():
         return None
 
 
-def run_suite(dataset_path=GOLDEN_PATH):
+def _save_incomplete_report(dataset, dataset_path, questions, completed_ids, failed_id, error):
+    """Persist an explicit incomplete marker so partial runs are never baselines."""
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    report_path = RESULTS_DIR / f'rag_eval_suite_incomplete_{timestamp}.json'
+    report_path.write_text(
+        json.dumps(
+            {
+                'metadata': {
+                    'created_at': datetime.now().astimezone().isoformat(),
+                    'golden_dataset': str(Path(dataset_path).resolve()),
+                    'golden_dataset_week': dataset.get('week'),
+                    'evaluation_scope': 'incomplete',
+                    'complete': False,
+                    'question_count': len(questions),
+                    'completed_graph_question_ids': completed_ids,
+                    'failed_question_id': failed_id,
+                    'failure_type': type(error).__name__,
+                    'failure_message': str(error),
+                },
+                'metrics': {},
+            },
+            indent=2,
+            ensure_ascii=False,
+        ),
+        encoding='utf-8',
+    )
+    suite_logger.error('Incomplete evaluation marker saved to %s', report_path)
+    return report_path
+
+
+def run_suite(dataset_path=GOLDEN_PATH, output_path=None):
     dataset, questions = load_questions(dataset_path)
     retriever_questions = [question for question in questions if question.get('type') != 'unanswerable']
     generator_questions = questions
@@ -95,6 +127,7 @@ def run_suite(dataset_path=GOLDEN_PATH):
     retriever_cases = []
     generator_cases = []
     run_ids_by_question = {}
+    completed_question_ids = []
     for golden in questions:
         question_id = golden['id']
         suite_logger.info(
@@ -104,13 +137,27 @@ def run_suite(dataset_path=GOLDEN_PATH):
             golden['question'],
         )
         run_capture = RootRunIdCapture()
-        state = graph.invoke(
-            {
-                'question': golden['question'],
-                'collection_name': EVALUATION_COLLECTION_NAME,
-            },
-            config={'callbacks': [run_capture]},
-        )
+        try:
+            state = graph.invoke(
+                {
+                    'question': golden['question'],
+                    'collection_name': EVALUATION_COLLECTION_NAME,
+                },
+                config={'callbacks': [run_capture]},
+            )
+        except RateLimitError as exc:
+            _save_incomplete_report(
+                dataset,
+                dataset_path,
+                questions,
+                completed_question_ids,
+                question_id,
+                exc,
+            )
+            raise RuntimeError(
+                f'Evaluation incomplete: Groq rate limit retries were exhausted on question {question_id}'
+            ) from exc
+        completed_question_ids.append(question_id)
         run_ids_by_question[question_id] = run_capture.run_id
         contexts = state.get('contexts', [])
         metadata = {
@@ -207,9 +254,13 @@ def run_suite(dataset_path=GOLDEN_PATH):
         'metrics': reports,
     }
 
-    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    report_path = RESULTS_DIR / f'rag_eval_suite_{timestamp}.json'
+    if output_path:
+        report_path = Path(output_path).expanduser().resolve()
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        report_path = RESULTS_DIR / f'rag_eval_suite_{timestamp}.json'
     report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding='utf-8')
 
     suite_logger.info('Full report saved to %s', report_path)
@@ -220,5 +271,10 @@ def run_suite(dataset_path=GOLDEN_PATH):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run the Stack Feed RAG evaluation suite')
     parser.add_argument('--dataset', type=Path, default=GOLDEN_PATH)
+    parser.add_argument(
+        '--output',
+        type=Path,
+        help='Optional report path. Defaults to a timestamped JSON file under evals/results/.',
+    )
     args = parser.parse_args()
-    run_suite(dataset_path=args.dataset)
+    run_suite(dataset_path=args.dataset, output_path=args.output)
